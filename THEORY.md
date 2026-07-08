@@ -75,4 +75,4 @@ The Language knowledge resource encompasses all the linguistic information requi
 - Attardo, S. (2005). *A catalog of logical mechanisms* [Unpublished manuscript].
 - Attardo, S. (2020). *The linguistics of humor: An introduction.* Oxford University Press.
 - Attardo, S., & Raskin, V. (1991). *Script theory revis(it)ed: Joke similarity and joke representation model.* Humor: International Journal of Humor Research, 4(3-4), 293–347.
-- Raskin, V. (1985). Semantic mechanisms of humor. D. Reidel.
+- Raskin, V. (1985). *Semantic mechanisms of humor.* D. Reidel.
