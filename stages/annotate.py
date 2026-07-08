@@ -1,7 +1,6 @@
-"""Stage 3 — KR annotation.
+"""Stage 3: KR annotation.
 
-One LLM call per detected line, fanned out with a concurrency cap.
-Each call sees the line, its containing segment, and a local context window.
+One LLM call per detected line, fanned out with a concurrency cap. Each call sees the line, its containing segment, and a local context window.
 """
 
 from __future__ import annotations
@@ -17,7 +16,6 @@ def _context_window(
     line: DetectedLine,
     window: int = 5,
 ) -> str:
-    """~2-3 paragraphs of context around the line (in `window` lines each side)."""
     start_idx = max(0, line.span.line_start - 1 - window)
     end_idx = min(len(story_lines), line.span.line_end + window)
     return "\n".join(story_lines[start_idx:end_idx])
@@ -29,7 +27,6 @@ async def annotate_line(
     story_lines: list[str],
     llm: LLMClient,
 ) -> KRAnnotation:
-    """Fill the KR bundle for one line."""
     ctx = _context_window(story_lines, line)
     user_msg = (
         f"Containing segment:\n"
@@ -66,7 +63,6 @@ async def annotate_all_lines(
     llm: LLMClient,
     concurrency: int = 10,
 ) -> list[KRAnnotation]:
-    """Annotate all detected lines concurrently."""
     seg_by_id = {s.segment_id: s for s in segments}
     sem = asyncio.Semaphore(concurrency)
 

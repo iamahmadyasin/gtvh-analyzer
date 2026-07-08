@@ -1,4 +1,4 @@
-"""Stage 2 — humorous line detection.
+"""Stage 2: humorous instance detection.
 
 One LLM call per segment, fanned out with a concurrency cap.
 """
@@ -24,7 +24,6 @@ async def detect_lines_in_segment(
     segment: NarrativeSegment,
     llm: LLMClient,
 ) -> list[DetectedLine]:
-    """Detect humorous lines in one segment."""
     segment_text = _segment_text(story_lines, segment)
     user_msg = (
         f"Segment info:\n"
@@ -52,7 +51,6 @@ async def detect_all_lines(
     llm: LLMClient,
     concurrency: int = 5,
 ) -> list[DetectedLine]:
-    """Detect lines across all segments concurrently, then re-number IDs globally."""
     sem = asyncio.Semaphore(concurrency)
 
     async def _one(seg: NarrativeSegment) -> list[DetectedLine]:

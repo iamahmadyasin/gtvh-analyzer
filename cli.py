@@ -1,8 +1,7 @@
 """
 CLI entry point.
 
-Default behavior: analyze every .txt in ./input, write .json into ./output.
-With --file <path>: analyze one file, write beside it (or to --out).
+Default behavior: analyze every .txt in ./input, write .json into ./output. With --file <path>: analyze one file, write beside it (or to --out).
 """
 
 from __future__ import annotations
@@ -46,7 +45,7 @@ async def _main() -> None:
         pass
 
     parser = argparse.ArgumentParser(
-        description="GTVH humor analysis of short stories."
+        description="GTVH analysis of humoruous short stories."
     )
     parser.add_argument(
         "--file",

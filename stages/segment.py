@@ -1,4 +1,4 @@
-"""Stage 1 — narrative segmentation."""
+"""Stage 1: narrative segmentation."""
 
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ async def segment_narrative(
     story_text_numbered: str,
     llm: LLMClient,
 ) -> list[NarrativeSegment]:
-    """Partition a line-numbered story into narrative segments."""
     result = await llm.call_structured(
         system_prompt=load_prompt("segment"),
         user_message=story_text_numbered,

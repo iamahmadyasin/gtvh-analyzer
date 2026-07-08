@@ -1,5 +1,3 @@
-"""End-to-end pipeline orchestration."""
-
 from __future__ import annotations
 
 from llm import LLMClient
@@ -16,7 +14,6 @@ from stages.annotate import annotate_all_lines
 
 
 def number_lines(text: str) -> str:
-    """Prefix each line with `Line N: ` (1-indexed)."""
     return "\n".join(
         f"Line {i + 1}: {line}" for i, line in enumerate(text.splitlines())
     )
@@ -28,13 +25,11 @@ def assemble(
     annotations: list[KRAnnotation],
     filename: str,
 ) -> Analysis:
-    """Merge detection and annotation into the final Analysis."""
     annot_by_id = {a.line_id: a for a in annotations}
     lines: list[AnnotatedLine] = []
     for d in detected:
         annot = annot_by_id.get(d.line_id)
         if annot is None:
-            # Shouldn't happen if concurrency completed, but be defensive
             continue
         lines.append(
             AnnotatedLine(
@@ -57,7 +52,6 @@ async def analyze(
     detect_concurrency: int = 5,
     annotate_concurrency: int = 10,
 ) -> Analysis:
-    """Run the full pipeline on one story."""
     numbered = number_lines(story_text)
     story_lines = numbered.splitlines()
 

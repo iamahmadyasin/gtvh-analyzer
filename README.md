@@ -13,17 +13,9 @@ be legible and editable rather than clever.
 
 ## Why this exists
 
-Raskin's Semantic Script Theory of Humor (1985) and Attardo's General
-Theory of Verbal Humor (1994) give necessary-and-sufficient conditions for
-why a text is funny, an actual "falsifiable", linguistic
-theory of humor competence with a defined annotation scheme. Attardo (2001) extends it
-from single jokes to full-length narrative texts. This project applies
-that extended scheme to short stories at scale, using LLMs to do the
-line-by-line annotation work that a human analyst would otherwise do
-by hand.
+Raskin's Semantic Script Theory of Humor (1985) and Attardo's General Theory of Verbal Humor (1994) give necessary-and-sufficient conditions for why a text is funny, an actual "falsifiable", linguistic theory of humor competence with a defined annotation scheme. Attardo (2001) extends it from single jokes to full-length narrative texts. This project applies that extended scheme to short stories at scale, using LLMs to do the line-by-line annotation work that a human analyst would otherwise do by hand.
 
-See [`THEORY.md`](./THEORY.md) for the full account of which parts of
-the theory are implemented and which are deliberately deferred.
+See [`THEORY.md`](./THEORY.md) for the full account of which parts of the theory are implemented and which are deliberately deferred.
 
 ## How it works
 
@@ -162,7 +154,7 @@ This software was developed as the practical implementation of our academic rese
 ---
 
 ### Software Citation
-To cite the software repository itself:
+To cite the software repository itself you can use the [`CITATION.cff`](./CITATION.cff) file included in this repository, or use the following reference:
 
 > Yasin, Ahmad., Wara, Kahf-ul., & Abid, Hureeza. (2024). *GTVH Analyzer: A Tool for Analyzing Short Stories Using the General Theory of Verbal Humor* [Computer software]. GitHub. https://github.com/iamahmadyasin/gtvh-analyzer
 

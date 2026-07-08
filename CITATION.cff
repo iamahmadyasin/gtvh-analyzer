@@ -1,13 +1,23 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
+type: software
+title: "GTVH Analyzer: A Tool for Analyzing Short Stories Using the General Theory of Verbal Humor"
 authors:
   - family-names: "Yasin"
     given-names: "Ahmad"
   - family-names: "Wara"
-    given-names: "Kah-ul"
+    given-names: "Kahf-ul"
   - family-names: "Abid"
     given-names: "Hureeza"
-title: "GTVH Analyzer: A Tool for Analyzing Short Stories Using the General Theory of Verbal Humor"
-version: 1.0.0
-date-released: 2026-07-07
+abstract: "An LLM pipeline that annotates humorous short stories using the General Theory of Verbal Humor (Attardo & Raskin, 1994). It locates each humorous instance in a text and identifies the Knowledge Resources (Script Opposition, Situation, Target, Narrative Strategy, Language) that make it funny."
+version: "1.0.0"
+date-released: "2026-07-07"
+license: MIT
+repository-code: "https://github.com/iamahmadyasin/gtvh-analyzer"
 url: "https://github.com/iamahmadyasin/gtvh-analyzer"
+keywords:
+  - computational humor
+  - linguistics of humor
+  - gtvh
+  - nlp
+  - llm

@@ -1,8 +1,7 @@
 """
 Thin async wrapper around OpenAI's structured-output API.
 
-Swap this file to switch providers. Everything downstream depends only on
-`LLMClient.call_structured(...) -> PydanticModel`.
+Swap this file to switch providers. Everything downstream depends only on `LLMClient.call_structured(...) -> PydanticModel`.
 """
 
 from __future__ import annotations
@@ -20,7 +19,6 @@ PROMPTS_DIR = Path(__file__).parent / "prompts"
 
 
 def load_prompt(name: str) -> str:
-    """Load a prompt file from prompts/. `name` is the stem (no extension)."""
     path = PROMPTS_DIR / f"{name}.md"
     return path.read_text(encoding="utf-8")
 
@@ -47,10 +45,6 @@ class LLMClient:
         user_message: str,
         response_model: Type[T],
     ) -> T:
-        """
-        Call the model with a Pydantic response schema. Returns a validated
-        instance of `response_model`.
-        """
         completion = await self.client.beta.chat.completions.parse(
             model=self.model,
             temperature=self.temperature,
