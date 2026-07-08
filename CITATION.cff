@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+  - family-names: "Yasin"
+    given-names: "Ahmad"
+  - family-names: "Wara"
+    given-names: "Kah-ul"
+  - family-names: "Abid"
+    given-names: "Hureeza"
+title: "GTVH Analyzer: A Tool for Analyzing Short Stories Using the General Theory of Verbal Humor"
+version: 1.0.0
+date-released: 2026-07-07
+url: "https://github.com/iamahmadyasin/gtvh-analyzer"

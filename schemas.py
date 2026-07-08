@@ -1,22 +1,15 @@
 """
-GTVH Humor Analysis — Pydantic schemas.
-
-Implements the annotation schema for the SSTH (Raskin 1985) and GTVH
-(Attardo & Raskin 1991; Attardo 2001, 2020) — Script Opposition (SO),
-Situation (SI), Target (TA), Narrative Strategy (NS), Language (LA).
-Logical Mechanism (LM) is intentionally excluded.
+Pydantic schemas implements the annotation schema.
 
 LLM-facing models avoid default values because OpenAI structured
 outputs require all fields to be present in `required`. Optional
-fields use `Optional[X]` (nullable).
+fields use `Optional[X]`.
 """
 
 from typing import Literal, Optional
 from enum import Enum
 from pydantic import BaseModel
 
-
-# ---------- Enums ----------
 
 class NarrativeLevel(str, Enum):
     LEVEL_0 = "level_0"
@@ -37,18 +30,6 @@ class LineType(str, Enum):
     IRONY = "irony"
 
 
-class TriggerType(str, Enum):
-    AMBIGUITY_REGULAR = "ambiguity_regular"
-    AMBIGUITY_FIGURATIVE = "ambiguity_figurative"
-    AMBIGUITY_SYNTACTIC = "ambiguity_syntactic"
-    AMBIGUITY_SITUATIONAL = "ambiguity_situational"
-    AMBIGUITY_QUASI = "ambiguity_quasi"
-    CONTRADICTION_REGULAR = "contradiction_regular"
-    CONTRADICTION_DICHOTOMIZING = "contradiction_dichotomizing"
-    CONTRADICTION_SENTENTIAL = "contradiction_sentential"
-    NOT_APPLICABLE = "not_applicable"
-
-
 class OppositionType(str, Enum):
     ACTUAL_VS_NONACTUAL = "actual_vs_nonactual"
     NORMAL_VS_ABNORMAL = "normal_vs_abnormal"
@@ -64,12 +45,6 @@ class BinaryCategory(str, Enum):
     NONE = "none"
 
 
-class OverlapDegree(str, Enum):
-    FULL = "full"
-    PARTIAL = "partial"
-    TRULY_PARTIAL = "truly_partial"
-
-
 class WordplayLevel(str, Enum):
     PHONOLOGICAL = "phonological"
     MORPHOLOGICAL = "morphological"
@@ -78,22 +53,18 @@ class WordplayLevel(str, Enum):
 
 
 class Orientation(str, Enum):
-    """TA sub-field: where the humor points (never null)."""
     SELF = "self"
     HEARER = "hearer"
     OTHER = "other"
     SITUATION = "situation"
 
 
-# ---------- Text location ----------
-
 class TextSpan(BaseModel):
     line_start: int
     line_end: int
-    text: str  # exact quoted text
+    text: str
 
-
-# ---------- Stage 1: Segmentation ----------
+# Stage 1: Segmentation
 
 class NarrativeSegment(BaseModel):
     segment_id: str                       # "NS-01"
@@ -108,14 +79,12 @@ class NarrativeSegment(BaseModel):
 
 
 class SegmentationResult(BaseModel):
-    """Wrapper for OpenAI structured output."""
     segments: list[NarrativeSegment]
 
 
-# ---------- Stage 2: Detection ----------
+# Stage 2: Detection
 
 class DetectedLine(BaseModel):
-    """Candidate humorous line, pre-annotation."""
     line_id: str                          # will be re-numbered globally
     span: TextSpan
     segment_id: str
@@ -128,34 +97,25 @@ class DetectedLine(BaseModel):
 
 
 class DetectionResult(BaseModel):
-    """Wrapper for OpenAI structured output."""
     lines: list[DetectedLine]
 
 
-# ---------- Stage 3: KR Annotation ----------
+# Stage 3: KR Annotation
 
 class ScriptOpposition(BaseModel):
-    script_1: str                         # UPPERCASE
-    script_2: str
-    real_situation: str
-    unreal_situation: str
-    shadow_opposition: Optional[str]
-    opposition_type: OppositionType
-    essential_binary_category: BinaryCategory
-    overlap_degree: OverlapDegree
+    script_1: str                         # concrete level, UPPERCASE
+    script_2: str                         # concrete level, UPPERCASE
+    essential_binary_category: BinaryCategory  # intermediate level
+    opposition_type: OppositionType            # abstract level
 
 
 class LanguageKR(BaseModel):
-    # Wordplay block — pun-like devices on the linguistic unit
     is_wordplay: bool
     wordplay_level: Optional[WordplayLevel]
-    wordplay_subtype: Optional[str]       # freeform, e.g., "homophone pun"
-    wordplay_note: str                    # brief note or "irr"
+    wordplay_subtype: Optional[str]
 
-    # Register block — stylistic mismatch above the word
     is_register_effect: bool
-    register_effect_subtype: Optional[str]  # freeform, e.g., "mock-heroic register"
-    register_note: str                      # brief note or "irr"
+    register_effect_subtype: Optional[str]
 
 
 class KRAnnotation(BaseModel):
@@ -163,21 +123,16 @@ class KRAnnotation(BaseModel):
     classification: LineClassification
     narrative_level_of_classification: NarrativeLevel
 
-    # SO — Raskin core
     script_opposition: ScriptOpposition
-    trigger_type: TriggerType
 
-    # Other KRs — kept light
-    situation: str                        # SI: e.g., "newsroom", "cotext", "irr"
-    target: Optional[str]                 # TA: None = non-aggressive
-    orientation: Orientation              # TA sub-field: where humor points (never None)
-    narrative_strategy: str               # NS
-    language: LanguageKR                  # LA
-
-    justification: str                    # 1-3 sentences
+    situation: str
+    target: Optional[str]
+    orientation: Orientation
+    narrative_strategy: str
+    language: LanguageKR
 
 
-# ---------- Assembled outputs (internal, defaults OK) ----------
+# Assembled outputs
 
 class AnnotatedLine(BaseModel):
     line_id: str
