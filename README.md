@@ -164,7 +164,7 @@ This software was developed as the practical implementation of our academic rese
 ### Software Citation
 To cite the software repository itself:
 
-> Yasin, Ahmad., Wara, Kahf-ul., & Abid, Hureeza. (2024). *TVH Analyzer: A Tool for Analyzing Short Stories Using the General Theory of Verbal Humor* [Computer software]. GitHub. https://github.com/iamahmadyasin/gtvh-analyzer
+> Yasin, Ahmad., Wara, Kahf-ul., & Abid, Hureeza. (2024). *GTVH Analyzer: A Tool for Analyzing Short Stories Using the General Theory of Verbal Humor* [Computer software]. GitHub. https://github.com/iamahmadyasin/gtvh-analyzer
 
 ## License
 
