@@ -25,10 +25,10 @@ The GTVH (Attardo, 1994) organizes humor analysis around six ordered Knowledge R
 
 Implemented at three levels of abstraction, annotated hierarchically:
 
-- **Concrete** — the specific opposed script pair.
-- **Intermediate** — the binary opposition type: good/bad, life/death,
+- **Concrete**: the specific opposed script pair.
+- **Intermediate**: the binary opposition type: good/bad, life/death,
   obscene/non-obscene, money/no-money, high/low stature, or none.
-- **Abstract** — the three types of real vs. unreal opposition: actual/non-actual, 
+- **Abstract**: the three types of real vs. unreal opposition: actual/non-actual, 
   normal/abnormal, possible/impossible.
 
 Raskin's (1985) theory walks through a symbolic combinatorial search to identify the two scripts. This project does not ask the LLM to replicate that procedure, it asks for the output reached the way a trained human analyst would reach it. This is a project design decision, not a claim about the theory.
@@ -59,8 +59,8 @@ The Narrative Strategy is the Knowledge Resource that accounts for the formal, s
 
 The Language knowledge resource encompasses all the linguistic information required for the complete verbalization of a text (Attardo, 1994). Restricted, by design, to detecting whether humor is verbal as opposed to referential, rather than full stylistic analysis. Two independent blocks:
 
-- **Wordplay** — phonological / morphological / lexical / syntactic levels. The four-way linguistic-level split is this project's own operationalization for LLM annotation, grounded in the GTVH treatment of the Language KR.
-- **Register effect** — a marked register choice.
+- **Wordplay**: phonological / morphological / lexical / syntactic levels. The four-way linguistic-level split is this project's own operationalization for LLM annotation, grounded in the GTVH treatment of the Language KR.
+- **Register effect**: — a marked register choice.
 
 ## Other pipeline-level design decisions
 
