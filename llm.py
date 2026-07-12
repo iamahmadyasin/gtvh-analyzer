@@ -1,7 +1,5 @@
 """
 Thin async wrapper around OpenAI's structured-output API.
-
-Swap this file to switch providers. Everything downstream depends only on `LLMClient.call_structured(...) -> PydanticModel`.
 """
 
 from __future__ import annotations
@@ -26,14 +24,14 @@ def load_prompt(name: str) -> str:
 class LLMClient:
     def __init__(
         self,
+        model: str,
         api_key: str | None = None,
-        model: str = "gpt-4.1",
-        temperature: float = 0.0,
+        temperature: float | None = 0.0,
     ):
         key = api_key or os.environ.get("OPENAI_API_KEY")
         if not key:
             raise RuntimeError(
-                "OPENAI_API_KEY not set. Either export it or put it in a .env file."
+                "OPENAI_API_KEY not set. Export it, or put it in a .env file."
             )
         self.client = AsyncOpenAI(api_key=key)
         self.model = model
@@ -45,19 +43,24 @@ class LLMClient:
         user_message: str,
         response_model: Type[T],
     ) -> T:
-        completion = await self.client.beta.chat.completions.parse(
-            model=self.model,
-            temperature=self.temperature,
-            messages=[
+        kwargs: dict = {
+            "model": self.model,
+            "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message},
             ],
-            response_format=response_model,
-        )
-        parsed = completion.choices[0].message.parsed
-        if parsed is None:
+            "response_format": response_model,
+        }
+        # Some reasoning models reject `temperature`
+        if self.temperature is not None:
+            kwargs["temperature"] = self.temperature
+
+        completion = await self.client.chat.completions.parse(**kwargs)
+
+        message = completion.choices[0].message
+        if message.parsed is None:
             raise RuntimeError(
                 f"Model returned no parsed content for {response_model.__name__}. "
-                f"Refusal: {completion.choices[0].message.refusal!r}"
+                f"Refusal: {message.refusal!r}"
             )
-        return parsed
+        return message.parsed

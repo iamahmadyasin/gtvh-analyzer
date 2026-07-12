@@ -1,7 +1,8 @@
 """
 CLI entry point.
 
-Default behavior: analyze every .txt in ./input, write .json into ./output. With --file <path>: analyze one file, write beside it (or to --out).
+Default behavior: analyze every .txt in ./input, write .json into ./output.
+With --file <path>: analyze one file, write beside it (or to --out).
 """
 
 from __future__ import annotations
@@ -45,7 +46,7 @@ async def _main() -> None:
         pass
 
     parser = argparse.ArgumentParser(
-        description="GTVH analysis of humoruous short stories."
+        description="GTVH humor analysis of short stories."
     )
     parser.add_argument(
         "--file",
@@ -57,10 +58,12 @@ async def _main() -> None:
         type=Path,
         help="Output .json path when using --file (default: ./output/<stem>.json).",
     )
+    parser.add_argument("--model", default="gpt-5.5", help="OpenAI model id.")
     parser.add_argument(
-        "--model",
-        default="gpt-4.1",
-        help="OpenAI model name (default: gpt-4.1).",
+        "--no-temperature",
+        action="store_true",
+        help="Omit the temperature parameter. Needed for some reasoning models "
+             "that reject it.",
     )
     parser.add_argument(
         "--detect-concurrency",
@@ -76,7 +79,10 @@ async def _main() -> None:
     )
     args = parser.parse_args()
 
-    llm = LLMClient(model=args.model)
+    llm = LLMClient(
+        model=args.model,
+        temperature=None if args.no_temperature else 0.0,
+    )
     OUTPUT_DIR.mkdir(exist_ok=True)
 
     if args.file:
@@ -100,7 +106,7 @@ async def _main() -> None:
         output_path = OUTPUT_DIR / (input_path.stem + ".json")
         try:
             await analyze_one(input_path, output_path, llm)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             print(f"  ✗ failed on {input_path.name}: {exc}", file=sys.stderr)
 
 
