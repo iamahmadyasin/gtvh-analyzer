@@ -133,9 +133,9 @@ these as opaque validated objects.
 - Attardo, S. (2020). *The Linguistics of Humor: An Introduction.* Oxford University Press.
 
 ## Credits and Acknowledgments
-- **Ahmad Yasin** - Lead Developer / Lead Prompt Engineer
-- **Kahf-ul-Wara** - Thank you for your help with prompt engineering, prompt testing and evaluation.
-- **Hureeza Abid** - Thank you for your help with initial operationalization and development of prompts.
+- **Ahmad Yasin** - Lead Developer & Lead Prompt Engineer
+- **Kahf-ul-Wara** - Annotation, Testing & Evaluation
+- **Hureeza Abid** - Initial Operationalization, Annotation & Prompt Development
 
 
 
