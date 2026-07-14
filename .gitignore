@@ -5,6 +5,7 @@ __pycache__/
 *.pyo
 .DS_Store
 
-# generated output — comment out if you want to commit analyses
 output/*.json
+input/*.txt
+
 model_list.txt
