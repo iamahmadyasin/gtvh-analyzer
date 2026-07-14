@@ -1,6 +1,5 @@
 """
 CLI entry point.
-
 Default behavior: analyze every .txt in ./input, write .json into ./output.
 With --file <path>: analyze one file, write beside it (or to --out).
 """
@@ -58,7 +57,11 @@ async def _main() -> None:
         type=Path,
         help="Output .json path when using --file (default: ./output/<stem>.json).",
     )
-    parser.add_argument("--model", default="gpt-5.5", help="OpenAI model id.")
+    parser.add_argument(
+        "--model",
+        required=True,
+        help="OpenAI model id. Run `python list_models.py` to see your options.",
+    )
     parser.add_argument(
         "--no-temperature",
         action="store_true",
@@ -68,14 +71,16 @@ async def _main() -> None:
     parser.add_argument(
         "--detect-concurrency",
         type=int,
-        default=5,
-        help="Max concurrent segment-detection calls.",
+        default=2,
+        help="Max concurrent segment-detection calls (default: 2). "
+             "Lower this if you hit rate limits.",
     )
     parser.add_argument(
         "--annotate-concurrency",
         type=int,
-        default=10,
-        help="Max concurrent line-annotation calls.",
+        default=3,
+        help="Max concurrent line-annotation calls (default: 3). "
+             "Lower this if you hit rate limits.",
     )
     args = parser.parse_args()
 
@@ -106,7 +111,7 @@ async def _main() -> None:
         output_path = OUTPUT_DIR / (input_path.stem + ".json")
         try:
             await analyze_one(input_path, output_path, llm)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             print(f"  ✗ failed on {input_path.name}: {exc}", file=sys.stderr)
 
 
