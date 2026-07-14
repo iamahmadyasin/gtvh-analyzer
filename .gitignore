@@ -7,3 +7,4 @@ __pycache__/
 
 # generated output — comment out if you want to commit analyses
 output/*.json
+model_list.txt
