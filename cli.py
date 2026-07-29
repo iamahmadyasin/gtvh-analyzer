@@ -71,22 +71,22 @@ async def _main() -> None:
     parser.add_argument(
         "--detect-concurrency",
         type=int,
-        default=2,
-        help="Max concurrent segment-detection calls (default: 2). "
+        default=1,
+        help="Max concurrent segment-detection calls."
              "Lower this if you hit rate limits.",
     )
     parser.add_argument(
         "--annotate-concurrency",
         type=int,
-        default=3,
-        help="Max concurrent line-annotation calls (default: 3). "
+        default=1,
+        help="Max concurrent line-annotation calls."
              "Lower this if you hit rate limits.",
     )
     args = parser.parse_args()
 
     llm = LLMClient(
         model=args.model,
-        temperature=None if args.no_temperature else 0.0,
+        temperature=None,
     )
     OUTPUT_DIR.mkdir(exist_ok=True)
 
