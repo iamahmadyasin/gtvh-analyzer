@@ -58,28 +58,34 @@ git clone <this-repo>
 cd gtvh-analyzer
 
 python -m venv .venv
-.venv\Scripts\activate
+venv\Scripts\activate
 pip install -r requirements.txt
 
 cp .env.example .env
 # edit .env and paste your OpenAI API key
 
 # drop one or more .txt story files into input/
-python cli.py
-# analysis JSON lands in output/
+python cli.py --model gpt-5.6-luna --no-temperature
 ```
+`--model` is required. The `--no-temperature` flag is needed for the
+GPT-5.6 family and other models that only accept their default
+temperature; drop it if your model accepts `temperature=0`.
 
 Single-file mode:
 
 ```bash
-python cli.py --file path/to/story.txt --out path/to/analysis.json
+python cli.py --model gpt-5.6-luna --no-temperature --file path/to/story.txt --out path/to/analysis.json
 ```
 
 Options:
 
 ```bash
-python cli.py --model gpt-4.1 --detect-concurrency 5 --annotate-concurrency 10
+python cli.py --model gpt-5.6-luna --no-temperature \
+    --detect-concurrency 1 --annotate-concurrency 1
 ```
+Concurrency defaults are low (to respect token-per-minute rate limits);
+raise them if your rate tier allows. The client retries automatically
+on rate-limit errors with exponential backoff.
 
 ## Project layout
 
