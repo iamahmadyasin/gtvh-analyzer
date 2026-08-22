@@ -1,3 +1,5 @@
+"""End-to-end pipeline orchestration."""
+
 from __future__ import annotations
 
 from llm import LLMClient
@@ -11,12 +13,7 @@ from schemas import (
 from stages.segment import segment_narrative
 from stages.detect import detect_all_lines
 from stages.annotate import annotate_all_lines
-
-
-def number_lines(text: str) -> str:
-    return "\n".join(
-        f"Line {i + 1}: {line}" for i, line in enumerate(text.splitlines())
-    )
+from textutils import number_lines
 
 
 def assemble(
@@ -30,6 +27,7 @@ def assemble(
     for d in detected:
         annot = annot_by_id.get(d.line_id)
         if annot is None:
+            # Shouldn't happen if concurrency completed, but be defensive
             continue
         lines.append(
             AnnotatedLine(

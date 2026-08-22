@@ -1,3 +1,4 @@
 pydantic>=2.0
-openai
+openai>=1.50
 python-dotenv>=1.0
+openpyxl>=3.1

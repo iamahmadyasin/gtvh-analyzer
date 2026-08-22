@@ -66,6 +66,8 @@ cp .env.example .env
 
 # drop one or more .txt story files into input/
 python cli.py --model gpt-5.6-luna --no-temperature
+
+python make_report.py
 ```
 `--model` is required. The `--no-temperature` flag is needed for the
 GPT-5.6 family and other models that only accept their default
@@ -75,6 +77,8 @@ Single-file mode:
 
 ```bash
 python cli.py --model gpt-5.6-luna --no-temperature --file path/to/story.txt --out path/to/analysis.json
+
+python make_report.py --json output/x.json
 ```
 
 Options:
@@ -102,9 +106,11 @@ gtvh-analyzer/
 │   ├── detect.py
 │   └── annotate.py
 ├── schemas.py                # Pydantic schemas
+├── textutils.py              # shared text helpers (no LLM dependency)
 ├── llm.py                    # OpenAI structured-output wrapper
 ├── pipeline.py               # end-to-end orchestration
 ├── cli.py                    # entry point
+├── make_report.py            # builds a reviewable .xlsx from an analysis JSON
 ├── THEORY.md                 # theoretical grounding & design decisions
 ├── requirements.txt
 └── .env.example
@@ -119,12 +125,29 @@ model in `schemas.py` to match; nothing else in the codebase needs to
 change, since `stages/`, `pipeline.py`, and `cli.py` only ever handle
 these as opaque validated objects.
 
+## Reviewing annotations
+
+`make_report.py` turns an analysis JSON into an Excel workbook built
+for manual review, not just a data dump.
+
+- **Story** sheet: the full text, one row per line, rows with
+  detected humor highlighted.
+- **Annotations** sheet: one row per humorous line, every KR field as
+  a column, filterable and sortable.
+- **Segments** sheet: narrative structure for context.
+
+Each annotation row links to its position in the Story sheet and back,
+so you can jump between "what's the surrounding context" and "what did
+the model say about this line" in one click. Two blank columns,
+*Reviewer Verdict* and *Reviewer Notes*, are there for you to fill in
+while reviewing.
+
 ## Status & limitations
 
 - **Logical Mechanism (LM)** is intentionally not implemented. See
   `THEORY.md` for why.
-- No held-out gold-annotated corpus yet; prompt quality is being
-  evaluated by hand against a small number of stories.
+- No held-out gold-annotated corpus yet. `make_report.py` produces a
+  reviewable workbook (with Reviewer Verdict / Notes columns) for manual QA.
 - Single LLM provider (OpenAI) at the moment; `llm.py` is the only file
   that would need to change to support another.
 - Stylistic-insights (Stage 4: strands, stacks, bridges/combs,
