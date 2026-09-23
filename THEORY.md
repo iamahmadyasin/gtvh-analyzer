@@ -53,7 +53,7 @@ The is the Knowledge Resource within the GTVH that specifies the entity that ser
 
 ### NS
 
-The Narrative Strategy is the Knowledge Resource that accounts for the formal, structural organization of the joke text. It can be understood as the joke's genre or, more precisely, its microgenre (Attardo, 1994). A freeform label from a suggested menu (joke, pun, riddle, dialogue, speech, etc.), with the model free to supply its own closest fit.
+The Narrative Strategy is the Knowledge Resource that accounts for the formal, structural organization of the joke text. It can be understood as the joke's genre or, more precisely, its microgenre (Attardo, 1994). Implemented as a fixed list describing how the humorous line is delivered: narration, narrator aside, free indirect thought, single utterance, dialogue exchange, question and answer, embedded text, list, repetition pattern, or other (with a short description). The list covers form only: wordplay and register belong to LA, and irony is captured by the line type, so NS does not repeat them. A fixed list keeps labels comparable across stories, which a freeform label did not.
 
 ### LA
 

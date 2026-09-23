@@ -59,6 +59,19 @@ class Orientation(str, Enum):
     SITUATION = "situation"
 
 
+class NarrativeStrategy(str, Enum):
+    NARRATION = "narration"
+    NARRATOR_ASIDE = "narrator_aside"
+    FREE_INDIRECT_THOUGHT = "free_indirect_thought"
+    SINGLE_UTTERANCE = "single_utterance"
+    DIALOGUE_EXCHANGE = "dialogue_exchange"
+    QUESTION_AND_ANSWER = "question_and_answer"
+    EMBEDDED_TEXT = "embedded_text"
+    LIST = "list"
+    REPETITION_PATTERN = "repetition_pattern"
+    OTHER = "other"
+
+
 class TextSpan(BaseModel):
     line_start: int
     line_end: int
@@ -131,7 +144,8 @@ class KRAnnotation(BaseModel):
     situation: str
     target: Optional[str]
     orientation: Orientation
-    narrative_strategy: str
+    narrative_strategy: NarrativeStrategy
+    narrative_strategy_note: Optional[str]  # describes the form when "other"
     language: LanguageKR
 
 

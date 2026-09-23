@@ -10,7 +10,7 @@ from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
 
-from schemas import Analysis
+from schemas import Analysis, NarrativeStrategy
 
 ROOT = Path(__file__).parent
 INPUT_DIR = ROOT / "input"
@@ -135,7 +135,9 @@ def build_report(analysis: Analysis, story_text: str, out_path: Path) -> None:
             a.situation,
             a.target or "",
             a.orientation.value,
-            a.narrative_strategy,
+            (f"other: {a.narrative_strategy_note}"
+             if a.narrative_strategy.value == "other" and a.narrative_strategy_note
+             else a.narrative_strategy.value),
             "Yes" if lang.is_wordplay else "No",
             lang.wordplay_level.value if lang.wordplay_level else "",
             lang.wordplay_subtype or "",
@@ -204,9 +206,16 @@ def build_report(analysis: Analysis, story_text: str, out_path: Path) -> None:
 
 def _run_one(json_path: Path, story_path: Path | None, out_path: Path | None) -> None:
     data = json.loads(json_path.read_text(encoding="utf-8"))
+    strategies = {m.value for m in NarrativeStrategy}
     for line in data.get("lines", []):
-        # Analyses made before the reasoning field existed
-        line.get("annotation", {}).setdefault("reasoning", "")
+        # Analyses made before the reasoning field and the fixed
+        # narrative strategy list existed
+        annotation = line.get("annotation", {})
+        annotation.setdefault("reasoning", "")
+        annotation.setdefault("narrative_strategy_note", None)
+        if annotation.get("narrative_strategy") not in strategies:
+            annotation["narrative_strategy_note"] = annotation.get("narrative_strategy")
+            annotation["narrative_strategy"] = "other"
     analysis = Analysis.model_validate(data)
 
     if story_path is None:

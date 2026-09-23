@@ -12,8 +12,8 @@
 # same text are billed at the cached-input rate after the first one.
 
 name: annotate_krs
-version: 3
-enums: [LineType, NarrativeLevel, BinaryCategory, OppositionType, Orientation, WordplayLevel]
+version: 4
+enums: [LineType, NarrativeLevel, BinaryCategory, OppositionType, Orientation, WordplayLevel, NarrativeStrategy]
 
 system: |
   # Annotating a Humorous Instance (GTVH)
@@ -50,7 +50,7 @@ system: |
 
   ## Reasoning (write this first)
 
-  The first field of your output is `reasoning`. Before filling in any other field, use it to think through Tasks 1–6 below in a few short sentences each: where the line sits in its segment, the two scripts and what opposes them, the frame, who or what the humor points at, its form, and whether it survives rephrasing. Every later field should follow from what you wrote here. Where a fixed-choice field was a close call, name the runner-up and mark the choice with `(?)` here.
+  The first field of your output is `reasoning`. Before filling in any other field, use it to think through Tasks 1–6 below in a few short sentences each: where the line sits in its segment, the two scripts and what opposes them, the frame, who or what the humor points at, how it is delivered, and whether it survives rephrasing. Every later field should follow from what you wrote here. Where a fixed-choice field was a close call, name the runner-up and mark the choice with `(?)` here.
 
   ---
 
@@ -150,13 +150,24 @@ system: |
 
   ## Task 5. Narrative Strategy
 
-  It deals with the organization of the text at the level of how the joke is structured as a piece of discourse. Record the form the line takes. Choose the closest fit from the list, or supply your own short label if none fits.
+  Narrative Strategy is how the humorous line is delivered as a piece of discourse: its form, not its content or its wording (wordplay and register belong to Task 6; irony is already captured by the line type). Choose exactly one:
 
-  `joke`, `pun`, `riddle`, `question_and_answer`, `greeting`, `statement`, `quotation`, `understatement`, `aside`, `metanarrative_comment`, `dialogue`, `narration`, `speech`, `epistolary`, `AAB pattern`
+  - `narration` — the narrator's ordinary reporting or description of events, people, or places.
+  - `narrator_aside` — the narrator steps outside the storyline: commentary, a parenthetical remark, a direct address to the reader, a comment on the telling itself.
+  - `free_indirect_thought` — a character's thoughts or perceptions rendered in the narrator's voice, without quotation.
+  - `single_utterance` — one character's remark in a single turn: a quip, retort, or one-liner that works on its own.
+  - `dialogue_exchange` — humor that needs two or more turns between characters; no single turn is funny alone.
+  - `question_and_answer` — a question whose answer delivers the twist, including riddles.
+  - `embedded_text` — a quoted letter, sign, notice, document, song, or speech set into the story.
+  - `list` — an enumeration, typically with an incongruous final item.
+  - `repetition_pattern` — a situation or phrasing repeated to set up an expectation, then broken on the last iteration (the AAB pattern, the rule of three).
+  - `other` — none of the above fits.
 
-  `AAB pattern`: Many jokes repeat a situation two or three times to set up a pattern of expectations, then break the pattern on the final iteration such as jokes with three characters.
+  If two apply, choose the one the humor depends on most (a funny line inside a quoted letter is `embedded_text`; a narrator's aside made in a single sentence is `narrator_aside`).
 
-  Output: `narrative_strategy`.
+  Set `narrative_strategy_note` to a short description of the form when you choose `other`; otherwise `null`.
+
+  Output: `narrative_strategy`, `narrative_strategy_note`.
 
   ---
 
@@ -194,7 +205,7 @@ system: |
 
   ## Uncertainty
 
-  Where a free-text value is genuinely unclear, suffix it with `(?)` (for example, `target: "the lawyer (?)"`). This applies only to free-text fields (`script_1`, `script_2`, `situation`, `target`, `narrative_strategy`, and the subtypes); fixed-choice fields cannot carry it, so choose the best fit there and flag the doubt in `reasoning`. Do not fabricate certainty.
+  Where a free-text value is genuinely unclear, suffix it with `(?)` (for example, `target: "the lawyer (?)"`). This applies only to free-text fields (`script_1`, `script_2`, `situation`, `target`, `narrative_strategy_note`, and the subtypes); fixed-choice fields cannot carry it, so choose the best fit there and flag the doubt in `reasoning`. Do not fabricate certainty.
 
   ## Output
 
