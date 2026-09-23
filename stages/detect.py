@@ -14,7 +14,7 @@ twice: once with the parent and once on their own.
 
 from __future__ import annotations
 
-from llm import LLMClient, run_all
+from llm import LLMClient
 from promptlib import Prompt, load_prompt
 from schemas import DetectedLine, DetectionResult, NarrativeSegment
 
@@ -149,7 +149,7 @@ async def detect_all_lines(
         )
 
     active = [s for s in segments if owners[s.segment_id]]
-    per_segment = await run_all(active, _one, concurrency)
+    per_segment = await llm.map(active, _one, concurrency)
 
     all_lines: list[DetectedLine] = []
     seen: set[tuple[int, int, str]] = set()

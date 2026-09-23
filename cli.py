@@ -11,6 +11,7 @@ import asyncio
 import sys
 from pathlib import Path
 
+from batch import BatchLLMClient
 from llm import LLMClient, Usage
 from pipeline import analyze
 
@@ -30,7 +31,6 @@ async def analyze_one(
     context: str,
 ) -> None:
     print(f"→ Analyzing {input_path.name}")
-    llm.usage = Usage()
     story = input_path.read_text(encoding="utf-8")
     result = await analyze(
         story,
@@ -50,7 +50,6 @@ async def analyze_one(
         f"  segments={len(result.segments)} "
         f"lines={len(result.lines)}"
     )
-    print(f"  {llm.usage.summary()}")
 
 
 async def _main() -> None:
@@ -115,9 +114,18 @@ async def _main() -> None:
         help="Ignore saved checkpoints and call the model again for every "
              "step (new results are still checkpointed).",
     )
+    parser.add_argument(
+        "--batch",
+        action="store_true",
+        help="Use OpenAI's Batch API: discounted, but each stage can take "
+             "up to 24 hours. All stories run together, so each stage is "
+             "one batch. If stopped while waiting, re-run the same command "
+             "to resume.",
+    )
     args = parser.parse_args()
 
-    llm = LLMClient(
+    client_cls = BatchLLMClient if args.batch else LLMClient
+    llm = client_cls(
         model=args.model,
         temperature=None if args.no_temperature else 0.0,
         checkpoint_dir=CHECKPOINT_DIR,
@@ -127,28 +135,42 @@ async def _main() -> None:
     OUTPUT_DIR.mkdir(exist_ok=True)
 
     if args.file:
-        input_path = args.file
-        if not input_path.exists():
-            print(f"File not found: {input_path}", file=sys.stderr)
+        if not args.file.exists():
+            print(f"File not found: {args.file}", file=sys.stderr)
             sys.exit(1)
-        output_path = args.out or (OUTPUT_DIR / (input_path.stem + ".json"))
-        await analyze_one(input_path, output_path, llm, *run_opts)
+        jobs = [(args.file, args.out or (OUTPUT_DIR / (args.file.stem + ".json")))]
+    else:
+        # Directory mode: everything in input/
+        if not INPUT_DIR.exists():
+            print(f"Input directory does not exist: {INPUT_DIR}", file=sys.stderr)
+            sys.exit(1)
+        files = sorted(INPUT_DIR.glob("*.txt"))
+        if not files:
+            print(f"No .txt files in {INPUT_DIR}. Drop one in and re-run.")
+            return
+        jobs = [(f, OUTPUT_DIR / (f.stem + ".json")) for f in files]
+
+    if args.batch:
+        # All stories at once, so each stage's requests share one batch.
+        outcomes = await asyncio.gather(
+            *[analyze_one(i, o, llm, *run_opts) for i, o in jobs],
+            return_exceptions=True,
+        )
+        for (input_path, _), outcome in zip(jobs, outcomes):
+            if isinstance(outcome, BaseException):
+                print(f"  ✗ failed on {input_path.name}: {outcome}", file=sys.stderr)
+        print(f"  total: {llm.usage.summary()}")
         return
 
-    # Batch mode: everything in input/
-    if not INPUT_DIR.exists():
-        print(f"Input directory does not exist: {INPUT_DIR}", file=sys.stderr)
-        sys.exit(1)
-    files = sorted(INPUT_DIR.glob("*.txt"))
-    if not files:
-        print(f"No .txt files in {INPUT_DIR}. Drop one in and re-run.")
-        return
-    for input_path in files:
-        output_path = OUTPUT_DIR / (input_path.stem + ".json")
+    for input_path, output_path in jobs:
+        llm.usage = Usage()
         try:
             await analyze_one(input_path, output_path, llm, *run_opts)
         except Exception as exc:  # noqa: BLE001
+            if args.file:
+                raise
             print(f"  ✗ failed on {input_path.name}: {exc}", file=sys.stderr)
+        print(f"  {llm.usage.summary()}")
 
 
 def main() -> None:

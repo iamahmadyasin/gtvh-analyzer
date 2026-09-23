@@ -88,6 +88,7 @@ python cli.py --model gpt-5.6-luna --no-temperature \
     --detect-concurrency 1 --annotate-concurrency 1 \
     --context story      # or: local
     # --fresh            # ignore saved checkpoints
+    # --batch            # Batch API: discounted, results within 24h
 ```
 Concurrency defaults are low (to respect token-per-minute rate limits);
 raise them if your rate tier allows. The client retries automatically
@@ -119,9 +120,30 @@ only the calls that prompt affects (and anything downstream whose input
 changed). Use `--fresh` to ignore saved checkpoints and sample again;
 delete the folder to reclaim space.
 
-Each story's run ends with a usage line (API calls, checkpoint hits,
-input tokens with the cached share, output tokens), so you can see what
-caching is saving.
+**Batch API.** `--batch` sends requests through OpenAI's Batch API,
+which is billed at a discount (50% at the time of writing) in exchange
+for results within 24 hours rather than immediately. Research runs
+rarely need answers in seconds, so this is the largest saving that
+doesn't change what the model sees. Check that your model is offered
+on the Batch API before relying on it.
+
+```bash
+python cli.py --model gpt-5.6-luna --no-temperature --batch
+```
+
+In batch mode every story in `input/` is analyzed together, so a run is
+three batches: all segmentation calls, then all detection calls, then
+all annotation calls (each stage needs the previous one's results).
+Progress is printed at each poll. If you stop the process while it
+waits, the batch keeps running on OpenAI's side; re-run the same
+command and it resumes that batch rather than submitting (and paying
+for) it again. Results land in the same checkpoints as online runs, so
+you can mix the two: for example, batch the whole corpus, then re-run
+one story online after editing a prompt.
+
+Each story's run (or, with `--batch`, the whole run) ends with a usage
+line (API calls, checkpoint hits, input tokens with the cached share,
+output tokens), so you can see what caching is saving.
 
 ## Project layout
 
@@ -141,6 +163,7 @@ gtvh-analyzer/
 ├── schemas.py                # Pydantic schemas
 ├── textutils.py              # shared text helpers (no LLM dependency)
 ├── llm.py                    # OpenAI structured-output wrapper, caching, checkpoints
+├── batch.py                  # Batch API client (--batch)
 ├── promptlib.py              # loads and checks prompts/*.yaml
 ├── pipeline.py               # end-to-end orchestration
 ├── cli.py                    # entry point

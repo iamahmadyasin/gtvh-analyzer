@@ -5,7 +5,7 @@ One LLM call per detected line, fanned out with a concurrency cap. Each call see
 
 from __future__ import annotations
 
-from llm import LLMClient, run_all
+from llm import LLMClient
 from promptlib import load_prompt
 from schemas import DetectedLine, KRAnnotation, NarrativeSegment
 
@@ -77,4 +77,4 @@ async def annotate_all_lines(
         segment = seg_by_id[line.segment_id]
         return await annotate_line(line, segment, story_lines, llm, full_story)
 
-    return await run_all(lines, _one, concurrency)
+    return await llm.map(lines, _one, concurrency)

@@ -151,6 +151,27 @@ class LLMClient:
         details = getattr(usage, "prompt_tokens_details", None)
         self.usage.cached_input_tokens += getattr(details, "cached_tokens", 0) or 0
 
+    @staticmethod
+    def _messages(system_prompt: str, user_message: str | Sequence[str]) -> list[dict]:
+        parts = [user_message] if isinstance(user_message, str) else list(user_message)
+        return [{"role": "system", "content": system_prompt}] + [
+            {"role": "user", "content": part} for part in parts
+        ]
+
+    @staticmethod
+    def _cache_key(messages: list[dict]) -> str:
+        """Same for every call sharing everything but the last message."""
+        return _sha256(messages[:-1])[:32]
+
+    async def map(
+        self,
+        items: Sequence[R],
+        fn: Callable[[R], Awaitable[T]],
+        concurrency: int,
+    ) -> list[T]:
+        """Run one stage's calls. See `run_all`."""
+        return await run_all(items, fn, concurrency)
+
     async def call_structured(
         self,
         system_prompt: str,
@@ -160,11 +181,7 @@ class LLMClient:
         """`user_message` may be a list: put the parts shared across calls
         (e.g. the full story) first and the call-specific part last, so the
         shared prefix can be served from the provider's prompt cache."""
-        parts = [user_message] if isinstance(user_message, str) else list(user_message)
-        messages = [{"role": "system", "content": system_prompt}] + [
-            {"role": "user", "content": part} for part in parts
-        ]
-
+        messages = self._messages(system_prompt, user_message)
         checkpoint = self._checkpoint_path(messages, response_model)
         cached = self._load_checkpoint(checkpoint, response_model)
         if cached is not None:
@@ -177,7 +194,7 @@ class LLMClient:
             "response_format": response_model,
             # Routes calls sharing a prefix to the same cache. Passed via
             # extra_body so older SDK versions without the param still work.
-            "extra_body": {"prompt_cache_key": _sha256(messages[:-1])[:32]},
+            "extra_body": {"prompt_cache_key": self._cache_key(messages)},
         }
         # Some models only accept their default temperature; omit when None.
         if self.temperature is not None:
@@ -238,12 +255,13 @@ async def run_all(
     items: Sequence[R],
     fn: Callable[[R], Awaitable[T]],
     concurrency: int,
+    warm_up: bool = True,
 ) -> list[T]:
     """Run `fn` over `items` with a concurrency cap.
 
-    The first item runs alone so its prompt prefix is cached before the
-    rest start; parallel requests sent before any response would all miss
-    the cache. Every call runs to completion even if some fail, so each
+    With `warm_up`, the first item runs alone so its prompt prefix is
+    cached before the rest start; parallel requests sent before any
+    response would all miss the cache. Every call runs to completion even if some fail, so each
     success is checkpointed; failures are then raised together and a
     re-run only repeats the calls that failed.
     """
@@ -255,9 +273,12 @@ async def run_all(
         async with sem:
             return await fn(item)
 
-    results = await asyncio.gather(_guarded(items[0]), return_exceptions=True)
+    first = 1 if warm_up else 0
+    results = await asyncio.gather(
+        *[_guarded(item) for item in items[:first]], return_exceptions=True
+    )
     results += await asyncio.gather(
-        *[_guarded(item) for item in items[1:]], return_exceptions=True
+        *[_guarded(item) for item in items[first:]], return_exceptions=True
     )
     errors = [r for r in results if isinstance(r, BaseException)]
     if errors:
