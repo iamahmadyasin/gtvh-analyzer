@@ -119,6 +119,9 @@ class LanguageKR(BaseModel):
 
 
 class KRAnnotation(BaseModel):
+    # First on purpose: the model writes fields in schema order, so its
+    # analysis comes before, and informs, every categorical choice.
+    reasoning: str                        # brief analysis across Tasks 1-6
     line_id: str
     classification: LineClassification
     narrative_level_of_classification: NarrativeLevel

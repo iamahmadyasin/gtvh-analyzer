@@ -12,7 +12,7 @@
 # same text are billed at the cached-input rate after the first one.
 
 name: annotate_krs
-version: 2
+version: 3
 enums: [LineType, NarrativeLevel, BinaryCategory, OppositionType, Orientation, WordplayLevel]
 
 system: |
@@ -45,6 +45,12 @@ system: |
   - The containing narrative segment: its label, narrative level, line range, and the line number where it ends.
   - Context: either the full story with global line numbers, or a local window of lines around the line.
   - The line itself: its text, its span, its line type (`discrete`, `register_clash`, or `irony`), and for `discrete` lines, the disjunctor already identified.
+
+  ---
+
+  ## Reasoning (write this first)
+
+  The first field of your output is `reasoning`. Before filling in any other field, use it to think through Tasks 1–6 below in a few short sentences each: where the line sits in its segment, the two scripts and what opposes them, the frame, who or what the humor points at, its form, and whether it survives rephrasing. Every later field should follow from what you wrote here. Where a fixed-choice field was a close call, name the runner-up and mark the choice with `(?)` here.
 
   ---
 
@@ -99,7 +105,7 @@ system: |
   - **`possible_vs_impossible`** The joke distinguishes between a plausible situation and one that is fully or partially impossible i.e. a plausible situation vs. one that is impossible or wildly implausible on its own terms.
   Example: "An aristocratic Bostonian lady hired a new chauffeur. As they started out on their first drive, she inquired: "What is your name?" "Thomas, ma'am," he answered. "What is your last name?" she said. "I never call chauffeurs by their first names." "Darling, ma'am," he replied. "Drive on - Thomas," she said".
 
-  If the case genuinely sits between two types, choose the one that best captures what the humor is doing. (These boundaries are known to blur; a merely
+  If the case genuinely sits between two types, choose the one that best captures what the humor is doing and note the tension in `reasoning`. (These boundaries are known to blur; a merely
   implausible case leans toward `possible_vs_impossible`, and a case where the first script is a social norm leans toward `normal_vs_abnormal`.)
 
   Output for Task 2: `script_1`, `script_2`, `essential_binary_category`, `opposition_type`.
@@ -188,7 +194,7 @@ system: |
 
   ## Uncertainty
 
-  Where a free-text value is genuinely unclear, suffix it with `(?)` (for example, `target: "the lawyer (?)"`). This applies only to free-text fields (`script_1`, `script_2`, `situation`, `target`, `narrative_strategy`, and the subtypes); fixed-choice fields cannot carry it, so choose the best fit there. Do not fabricate certainty.
+  Where a free-text value is genuinely unclear, suffix it with `(?)` (for example, `target: "the lawyer (?)"`). This applies only to free-text fields (`script_1`, `script_2`, `situation`, `target`, `narrative_strategy`, and the subtypes); fixed-choice fields cannot carry it, so choose the best fit there and flag the doubt in `reasoning`. Do not fabricate certainty.
 
   ## Output
 

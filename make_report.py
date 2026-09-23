@@ -98,11 +98,12 @@ def build_report(analysis: Analysis, story_text: str, out_path: Path) -> None:
         "Script 1", "Script 2", "Binary Category", "Opposition Type",
         "Situation", "Target", "Orientation", "Narrative Strategy",
         "Wordplay?", "Wordplay Level", "Wordplay Subtype",
-        "Register Effect?", "Register Subtype",
+        "Register Effect?", "Register Subtype", "Model Reasoning",
         "Reviewer Verdict", "Reviewer Notes",
     ]
     wrap_cols = {ann_headers.index(h) + 1 for h in
-                 ("Humorous Text", "Detection Reason", "Reviewer Notes")}
+                 ("Humorous Text", "Detection Reason", "Model Reasoning",
+                  "Reviewer Notes")}
     verdict_col = get_column_letter(ann_headers.index("Reviewer Verdict") + 1)
     for c, h in enumerate(ann_headers, start=1):
         ann_ws.cell(row=1, column=c, value=h)
@@ -140,6 +141,7 @@ def build_report(analysis: Analysis, story_text: str, out_path: Path) -> None:
             lang.wordplay_subtype or "",
             "Yes" if lang.is_register_effect else "No",
             lang.register_effect_subtype or "",
+            a.reasoning,
             "",  # Reviewer Verdict — blank for user
             "",  # Reviewer Notes — blank for user
         ]
@@ -155,8 +157,8 @@ def build_report(analysis: Analysis, story_text: str, out_path: Path) -> None:
     _autofit(ann_ws, {
         1: 10, 2: 14, 3: 12, 4: 14, 5: 22, 6: 14, 7: 12, 8: 10, 9: 45,
         10: 20, 11: 40, 12: 22, 13: 22, 14: 18, 15: 20, 16: 20, 17: 20,
-        18: 12, 19: 18, 20: 10, 21: 14, 22: 18, 23: 14, 24: 18, 25: 16,
-        26: 30,
+        18: 12, 19: 18, 20: 10, 21: 14, 22: 18, 23: 14, 24: 18, 25: 60,
+        26: 16, 27: 30,
     })
     ann_ws.auto_filter.ref = f"A1:{get_column_letter(len(ann_headers))}{len(analysis.lines) + 1}"
 
@@ -202,6 +204,9 @@ def build_report(analysis: Analysis, story_text: str, out_path: Path) -> None:
 
 def _run_one(json_path: Path, story_path: Path | None, out_path: Path | None) -> None:
     data = json.loads(json_path.read_text(encoding="utf-8"))
+    for line in data.get("lines", []):
+        # Analyses made before the reasoning field existed
+        line.get("annotation", {}).setdefault("reasoning", "")
     analysis = Analysis.model_validate(data)
 
     if story_path is None:
