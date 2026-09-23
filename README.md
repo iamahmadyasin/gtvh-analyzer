@@ -85,11 +85,43 @@ Options:
 
 ```bash
 python cli.py --model gpt-5.6-luna --no-temperature \
-    --detect-concurrency 1 --annotate-concurrency 1
+    --detect-concurrency 1 --annotate-concurrency 1 \
+    --context story      # or: local
+    # --fresh            # ignore saved checkpoints
 ```
 Concurrency defaults are low (to respect token-per-minute rate limits);
 raise them if your rate tier allows. The client retries automatically
 on rate-limit errors with exponential backoff.
+
+## Cost controls: prompt caching and checkpoints
+
+**Prompt caching.** OpenAI bills a repeated prompt prefix of 1,024+
+tokens at its cached-input rate. Detection and annotation calls are
+ordered so everything shared comes first (the stage's system prompt,
+then the full numbered story) and only the segment- or line-specific
+part comes last. Each call carries a `prompt_cache_key` so calls that
+share a prefix hit the same cache, and the first call of each stage
+runs alone so the cache is warm before the rest start.
+
+`--context` chooses what those calls see:
+
+- `story` (default): the full story. Most accurate: callbacks and
+  running gags set up in other segments are visible. After the first
+  call of a stage, the story is billed at the cached rate.
+- `local`: only the segment's own lines (detection) or 5 lines around
+  the humorous line (annotation). Fewest tokens, least context.
+
+**Checkpoints.** Every successful model response is saved under
+`output/.checkpoints/`, keyed by a hash of the model, temperature,
+messages and response schema. If a run fails partway, re-running the
+same command repeats only the failed calls. Editing a prompt re-runs
+only the calls that prompt affects (and anything downstream whose input
+changed). Use `--fresh` to ignore saved checkpoints and sample again;
+delete the folder to reclaim space.
+
+Each story's run ends with a usage line (API calls, checkpoint hits,
+input tokens with the cached share, output tokens), so you can see what
+caching is saving.
 
 ## Project layout
 
@@ -97,6 +129,7 @@ on rate-limit errors with exponential backoff.
 gtvh-analyzer/
 ├── input/                    # drop .txt story files here
 ├── output/                   # analysis JSON lands here
+│   └── .checkpoints/         # saved model responses (safe to delete)
 ├── prompts/
 │   ├── segment.md            # Stage 1
 │   ├── detect_lines.md       # Stage 2

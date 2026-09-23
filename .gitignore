@@ -6,6 +6,8 @@ __pycache__/
 .DS_Store
 
 output/*.json
+output/*.xlsx
+output/.checkpoints/
 input/*.txt
 
 model_list.txt

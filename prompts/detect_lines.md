@@ -2,6 +2,10 @@
 
 You are analyzing a humorous short story under the framework of the General Theory of Verbal Humor. This is Stage 2 of a multi-stage pipeline. Your task is to identify and locate every candidate humorous instance ("line") within a given narrative segment. You must flag, locate, and identify every single humorous instance in the text. A later stage annotates each line with the full Knowledge Resource bundle. Do NOT do that here.
 
+## Input
+
+You receive the segment's details and either (a) the full numbered story plus the line numbers to analyze, or (b) only the segment's own numbered lines. Report humor only within the lines you are asked to analyze. When the full story is given, use the rest of it as context: a line may pay off a setup, running gag, or characterization established elsewhere. Lines handed to an embedded segment are analyzed separately; do not report humor there.
+
 ## Three line types
 
 ### 1. `discrete` — single-trigger disjunctor

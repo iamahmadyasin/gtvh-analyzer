@@ -1,6 +1,9 @@
 """Stage 2: humorous instance detection.
 
-One LLM call per segment, fanned out with a concurrency cap.
+One LLM call per segment, fanned out with a concurrency cap. With a
+story context, every call starts with the same full numbered story
+(served from the prompt cache after the first call) and names the lines
+to analyze; without one, each call gets only its segment's text.
 
 Embedded segments (level_-1, level_-2) sit inside their parent's line
 range, so every story line is assigned to the innermost segment that
@@ -11,9 +14,7 @@ twice: once with the parent and once on their own.
 
 from __future__ import annotations
 
-import asyncio
-
-from llm import LLMClient, load_prompt
+from llm import LLMClient, load_prompt, run_all
 from schemas import DetectedLine, DetectionResult, NarrativeSegment
 
 
@@ -40,6 +41,17 @@ def assign_line_owners(
     return owned
 
 
+def _ranges(line_numbers: list[int]) -> str:
+    """[1, 2, 3, 7, 8] -> "1-3, 7-8"."""
+    runs: list[list[int]] = []
+    for n in line_numbers:
+        if runs and n == runs[-1][1] + 1:
+            runs[-1][1] = n
+        else:
+            runs.append([n, n])
+    return ", ".join(f"{a}-{b}" if a != b else str(a) for a, b in runs)
+
+
 def _segment_text(story_lines: list[str], owned: list[int]) -> str:
     """The numbered lines a segment owns, with a marker where lines were
     handed to an embedded segment."""
@@ -61,27 +73,49 @@ async def detect_lines_in_segment(
     segment: NarrativeSegment,
     owned: list[int],
     llm: LLMClient,
+    story_context: str | None,
 ) -> list[DetectedLine]:
-    segment_text = _segment_text(story_lines, owned)
-    user_msg = (
+    segment_info = (
         f"Segment info:\n"
         f"- segment_id: {segment.segment_id}\n"
         f"- label: {segment.label}\n"
         f"- narrative_level: {segment.narrative_level.value}\n"
         f"- line_range: [{segment.line_start}, {segment.line_end}]\n"
         f"- description: {segment.description}\n\n"
-        f"Segment text (with global line numbers):\n"
-        f"{segment_text}\n\n"
-        f"Detect humorous lines in this segment. Use the segment_id above "
-        f"in every detected line. Use the global line numbers shown."
     )
+    owned_set = set(owned)
+    if story_context is not None:
+        handed_off = [
+            n for n in range(segment.line_start, segment.line_end + 1)
+            if n not in owned_set
+        ]
+        note = (
+            f"Lines {_ranges(handed_off)} belong to embedded segments that "
+            f"are analyzed separately; do not report humor located there.\n\n"
+            if handed_off else ""
+        )
+        messages = [story_context, (
+            f"{segment_info}"
+            f"Lines to analyze: {_ranges(owned)}\n"
+            f"{note}"
+            f"Detect humorous lines within the lines to analyze, using the "
+            f"rest of the story only as context. Use the segment_id above "
+            f"in every detected line. Use the global line numbers shown."
+        )]
+    else:
+        messages = [(
+            f"{segment_info}"
+            f"Segment text (with global line numbers):\n"
+            f"{_segment_text(story_lines, owned)}\n\n"
+            f"Detect humorous lines in this segment. Use the segment_id above "
+            f"in every detected line. Use the global line numbers shown."
+        )]
     result = await llm.call_structured(
         system_prompt=load_prompt("detect_lines"),
-        user_message=user_msg,
+        user_message=messages,
         response_model=DetectionResult,
     )
 
-    owned_set = set(owned)
     kept: list[DetectedLine] = []
     for line in result.lines:
         # The rest of the pipeline looks segments up by this id; don't
@@ -102,22 +136,20 @@ async def detect_all_lines(
     segments: list[NarrativeSegment],
     llm: LLMClient,
     concurrency: int = 5,
+    story_context: str | None = None,
 ) -> list[DetectedLine]:
     owners = assign_line_owners(segments, len(story_lines))
     uncovered = len(story_lines) - sum(len(v) for v in owners.values())
     if uncovered:
         print(f"    warning: {uncovered} line(s) fall outside every segment")
 
-    sem = asyncio.Semaphore(concurrency)
-
     async def _one(seg: NarrativeSegment) -> list[DetectedLine]:
-        async with sem:
-            return await detect_lines_in_segment(
-                story_lines, seg, owners[seg.segment_id], llm
-            )
+        return await detect_lines_in_segment(
+            story_lines, seg, owners[seg.segment_id], llm, story_context
+        )
 
     active = [s for s in segments if owners[s.segment_id]]
-    per_segment = await asyncio.gather(*[_one(s) for s in active])
+    per_segment = await run_all(active, _one, concurrency)
 
     all_lines: list[DetectedLine] = []
     seen: set[tuple[int, int, str]] = set()

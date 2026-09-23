@@ -49,18 +49,28 @@ async def analyze(
     llm: LLMClient,
     detect_concurrency: int = 5,
     annotate_concurrency: int = 10,
+    context: str = "story",
 ) -> Analysis:
+    """`context="story"` gives stages 2 and 3 the full story as a shared,
+    cacheable first message; `"local"` gives them only the segment text
+    or a few surrounding lines (fewer input tokens, less context)."""
     numbered = number_lines(story_text)
     story_lines = numbered.splitlines()
+    story_context = (
+        f"Full story, with global line numbers:\n\n{numbered}"
+        if context == "story" else None
+    )
 
     segments = await segment_narrative(numbered, llm)
 
     detected = await detect_all_lines(
-        story_lines, segments, llm, concurrency=detect_concurrency
+        story_lines, segments, llm, concurrency=detect_concurrency,
+        story_context=story_context,
     )
 
     annotations = await annotate_all_lines(
-        detected, segments, story_lines, llm, concurrency=annotate_concurrency
+        detected, segments, story_lines, llm, concurrency=annotate_concurrency,
+        story_context=story_context,
     )
 
     return assemble(segments, detected, annotations, filename)

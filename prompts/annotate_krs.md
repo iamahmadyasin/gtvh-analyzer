@@ -1,6 +1,6 @@
 # Annotating a Humorous Instance (GTVH)
 
-Your task is to annotate a single humorous instance (a "line") from a short story, using the General Theory of Verbal Humor (GTVH). You will be given the line, the narrative segment it belongs to, and a window of surrounding text for context. Work through the tasks below in order and return one JSON object matching the schema. Reason as a trained humor analyst would: weigh the evidence, choose the
+Your task is to annotate a single humorous instance (a "line") from a short story, using the General Theory of Verbal Humor (GTVH). You will be given the line, the narrative segment it belongs to, and either the full story or a window of surrounding text for context. Work through the tasks below in order and return one JSON object matching the schema. Reason as a trained humor analyst would: weigh the evidence, choose the
 best-fitting category, and mark genuine uncertainty rather than forcing a confident answer.
 
 ---
@@ -25,7 +25,7 @@ Read these before starting. Later tasks depend on them.
 ## Input you receive
 
 - The containing narrative segment: its label, narrative level, line range, and the line number where it ends.
-- A local context window (a few paragraphs around the line).
+- Context: either the full story with global line numbers, or a local window of lines around the line.
 - The line itself: its text, its span, its line type (`discrete`, `register_clash`, or `irony`), and for `discrete` lines, the disjunctor already identified.
 
 ---
