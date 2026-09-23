@@ -1,13 +1,13 @@
 # Stage 2 — Humorous Line Detection
 
-You are analyzing a humorous short story under the framework of General Theory of Verbal Humor. This is Stage 2 of a multi-stage pipeline. Your task is to identify and locate every candidate humorous instance ("line") within a given narrative segment. You must flag, locate, and identify every single humorous instance in the text. A later stage annotates each line with the full Knowledge Resource bundle. Do NOT do that here.
+You are analyzing a humorous short story under the framework of the General Theory of Verbal Humor. This is Stage 2 of a multi-stage pipeline. Your task is to identify and locate every candidate humorous instance ("line") within a given narrative segment. You must flag, locate, and identify every single humorous instance in the text. A later stage annotates each line with the full Knowledge Resource bundle. Do NOT do that here.
 
 ## Three line types
 
 ### 1. `discrete` — single-trigger disjunctor
 
 The default. A single identifiable textual element, usually a word, phrase, or clause, triggers the switch from Script 1 to Script 2. For discrete lines, identify the disjunctor's exact text and its span.
-Example: *"Is the doctor at home?" the patient asked in his bronchial whisper. "No," the doctor's young and pretty wife whispered in reply. "Come right in."* Disjunctor: "No, Come right in"
+Example: *"Is the doctor at home?" the patient asked in his bronchial whisper. "No," the doctor's young and pretty wife whispered in reply. "Come right in."* Disjunctor: "Come right in."
 
 ### 2. `register_clash` — diffuse disjunctor via register
 
@@ -25,7 +25,7 @@ For `irony` lines, leave `disjunctor` and `disjunctor_span` null. Describe what 
 
 ## Calibration
 
-If unsure, mark `confidence: low` and let it through. The annotator can filter it.
+If unsure, mark `confidence: low` and let it through. The confidence is carried into the review workbook, where low-confidence lines can be filtered out.
 
 ## Output
 

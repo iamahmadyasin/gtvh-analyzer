@@ -141,6 +141,10 @@ class AnnotatedLine(BaseModel):
     line_type: LineType
     disjunctor: Optional[str] = None
     disjunctor_span: Optional[TextSpan] = None
+    # Carried over from Stage 2 so reviewers can filter weak detections.
+    confidence: Optional[Literal["high", "medium", "low"]] = None
+    setup: Optional[str] = None
+    brief_reason: Optional[str] = None
     annotation: KRAnnotation
 
 

@@ -45,11 +45,11 @@ Output: `classification`, `narrative_level_of_classification`.
 
 ## Task 2. Script Opposition
 
-Start by identifying concrete oppositions to abstract ones.
+Work from the concrete level to the abstract one.
 
 ### Step 2a. Name the two opposed scripts
 
-Identify the two scripts the instanxe evokes and label each with a short UPPERCASE noun phrase specific enough that a reader could reconstruct the opposition from the labels alone.
+Identify the two scripts the instance evokes and label each with a short UPPERCASE noun phrase specific enough that a reader could reconstruct the opposition from the labels alone.
 
 - `script_1` — the setup script (the first, expected reading).
 - `script_2` — the opposed script (the second reading the line reveals).
@@ -62,7 +62,7 @@ Most oppositions rest on a basic human binary. Choose the one that the oppositio
 
 - `good_bad` — a judgmental, evaluative opposition.
 - `life_death` — life vs. death, including age and health extremes.
-- `sexual_non-sexual` — obscene vs. nonobscene i.e. sexual humor.
+- `obscene_nonobscene` — obscene vs. non-obscene, i.e. sexual humor.
 - `money_nomoney` — having vs. lacking money.
 - `high_low_stature` — high vs. low social status or intelligence.
 - `none` — no basic binary could be identified.
@@ -81,7 +81,7 @@ Example: "Who was that gentleman I saw you with last night?" "That was no gentle
 - **`possible_vs_impossible`** The joke distinguishes between a plausible situation and one that is fully or partially impossible i.e. a plausible situation vs. one that is impossible or wildly implausible on its own terms.
 Example: "An aristocratic Bostonian lady hired a new chauffeur. As they started out on their first drive, she inquired: "What is your name?" "Thomas, ma'am," he answered. "What is your last name?" she said. "I never call chauffeurs by their first names." "Darling, ma'am," he replied. "Drive on - Thomas," she said".
 
-If the case genuinely sits between two types, choose the one that best captures what the humor is doing and flag the tension with `(?)` in your justification. (These boundaries are known to blur; a merely
+If the case genuinely sits between two types, choose the one that best captures what the humor is doing. (These boundaries are known to blur; a merely
 implausible case leans toward `possible_vs_impossible`, and a case where the first script is a social norm leans toward `normal_vs_abnormal`.)
 
 Output for Task 2: `script_1`, `script_2`, `essential_binary_category`, `opposition_type`.
@@ -126,7 +126,7 @@ Output: `orientation`, `target`.
 
 ## Task 5. Narrative Strategy
 
-It deals with the organization of the text at the level of how the joke is structured as a piece of discourse.Record the form the line takes. Choose the closest fit from the list, or supply your own short label if none fits.
+It deals with the organization of the text at the level of how the joke is structured as a piece of discourse. Record the form the line takes. Choose the closest fit from the list, or supply your own short label if none fits.
 
 `joke`, `pun`, `riddle`, `question_and_answer`, `greeting`, `statement`, `quotation`, `understatement`, `aside`, `metanarrative_comment`, `dialogue`, `narration`, `speech`, `epistolary`, `AAB pattern`
 
@@ -149,7 +149,7 @@ Record whether the humor depends on the specific wording. Some humor is verbal i
   - `phonological` — sound: homophone puns, near-homophones, spoonerisms, and sound patterning like alliteration or rhyme used for humor.
   - `morphological` — word-formation: blends/portmanteaus, malapropisms, coined words, playful affixation.
   - `lexical` — word meaning: one word carrying two meanings at once, idiom taken literally, literal-vs-figurative collision.
-  - `syntactic` — sentence structure: garden-path sentences, attachmentor scope ambiguity.
+  - `syntactic` — sentence structure: garden-path sentences, attachment or scope ambiguity.
   - `null` if `is_wordplay` is false.
 - `wordplay_subtype` — a short freeform label for the specific device (e.g. `"homophone pun"`, `"portmanteau"`, `"garden path"`, `"alliteration"`), or `null`.
 
@@ -161,17 +161,16 @@ Register humor turns on a mismatch between the style of language used and the si
 
 - `is_register_effect` — `true` if a marked register choice is doing the humor work; `false` otherwise.
 - `register_effect_subtype` — a short freeform label (e.g. `"mock-heroic register"`, `"bureaucratese on trivia"`, `"sacred vocabulary on profane act"`), or `null`.
-- `register_note` — a brief explanation if present, else `"irr"`.
 
-For a purely referential joke set `is_wordplay: false`, `is_register_effect: false`, both subtypes `null`, both notes `"irr"`.
+For a purely referential joke set `is_wordplay: false`, `is_register_effect: false`, `wordplay_level: null`, and both subtypes `null`.
 
-Output: the `language` object with all seven fields above.
+Output: the `language` object with all five fields above.
 
 ---
 
 ## Uncertainty
 
-Where a value is genuinely unclear, prefix or suffix it with `(?)` (for example, `target: "the lawyer (?)"`). Do not fabricate certainty.
+Where a free-text value is genuinely unclear, suffix it with `(?)` (for example, `target: "the lawyer (?)"`). This applies only to free-text fields (`script_1`, `script_2`, `situation`, `target`, `narrative_strategy`, and the subtypes); fixed-choice fields cannot carry it, so choose the best fit there. Do not fabricate certainty.
 
 ## Output
 

@@ -20,10 +20,22 @@ INPUT_DIR = ROOT / "input"
 OUTPUT_DIR = ROOT / "output"
 
 
-async def analyze_one(input_path: Path, output_path: Path, llm: LLMClient) -> None:
+async def analyze_one(
+    input_path: Path,
+    output_path: Path,
+    llm: LLMClient,
+    detect_concurrency: int,
+    annotate_concurrency: int,
+) -> None:
     print(f"→ Analyzing {input_path.name}")
     story = input_path.read_text(encoding="utf-8")
-    result = await analyze(story, input_path.name, llm)
+    result = await analyze(
+        story,
+        input_path.name,
+        llm,
+        detect_concurrency=detect_concurrency,
+        annotate_concurrency=annotate_concurrency,
+    )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
         result.model_dump_json(indent=2, exclude_none=False),
@@ -60,7 +72,7 @@ async def _main() -> None:
     parser.add_argument(
         "--model",
         required=True,
-        help="OpenAI model id. Run `python list_models.py` to see your options.",
+        help="OpenAI model id, e.g. gpt-5.6-luna.",
     )
     parser.add_argument(
         "--no-temperature",
@@ -72,22 +84,23 @@ async def _main() -> None:
         "--detect-concurrency",
         type=int,
         default=1,
-        help="Max concurrent segment-detection calls."
+        help="Max concurrent segment-detection calls. "
              "Lower this if you hit rate limits.",
     )
     parser.add_argument(
         "--annotate-concurrency",
         type=int,
         default=1,
-        help="Max concurrent line-annotation calls."
+        help="Max concurrent line-annotation calls. "
              "Lower this if you hit rate limits.",
     )
     args = parser.parse_args()
 
     llm = LLMClient(
         model=args.model,
-        temperature=None,
+        temperature=None if args.no_temperature else 0.0,
     )
+    concurrency = (args.detect_concurrency, args.annotate_concurrency)
     OUTPUT_DIR.mkdir(exist_ok=True)
 
     if args.file:
@@ -96,7 +109,7 @@ async def _main() -> None:
             print(f"File not found: {input_path}", file=sys.stderr)
             sys.exit(1)
         output_path = args.out or (OUTPUT_DIR / (input_path.stem + ".json"))
-        await analyze_one(input_path, output_path, llm)
+        await analyze_one(input_path, output_path, llm, *concurrency)
         return
 
     # Batch mode: everything in input/
@@ -110,7 +123,7 @@ async def _main() -> None:
     for input_path in files:
         output_path = OUTPUT_DIR / (input_path.stem + ".json")
         try:
-            await analyze_one(input_path, output_path, llm)
+            await analyze_one(input_path, output_path, llm, *concurrency)
         except Exception as exc:  # noqa: BLE001
             print(f"  ✗ failed on {input_path.name}: {exc}", file=sys.stderr)
 

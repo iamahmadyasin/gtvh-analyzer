@@ -15,6 +15,8 @@ A segment is a bounded stretch of narrative with its own beginning and end. Each
 - **level_+1** — a framing narrative that CONTAINS the main storyline: prologues, dedications, editorial forewords, first-person framing.
 - **level_+2** — an implied metanarrator distancing themselves from the level_+1 narrator. Rare; look for cases where the narrator says things the reader is clearly meant to disagree with.
 
+Embedded segments overlap their parent: a level_-1 segment's line range lies inside the range of the segment that contains it, and its `parent_segment_id` points to that segment. Together, the level_0 and level_+n segments should cover every line of the story.
+
 ## Segmentation cues
 
 1. **Explicit metatextual authorial markers.** Chapter headings, section breaks (`***`, blank lines with a divider), "End of Act", epistolary headers ("Dear —,"), quoted-song delimiters, italicized inserts.

@@ -93,13 +93,17 @@ def build_report(analysis: Analysis, story_text: str, out_path: Path) -> None:
     ann_ws = wb.create_sheet("Annotations")
     ann_headers = [
         "Line ID", "Context ▶", "Classification", "Narrative Level",
-        "Segment", "Line Type", "Span", "Humorous Text", "Disjunctor",
+        "Segment", "Line Type", "Detection Confidence", "Span",
+        "Humorous Text", "Disjunctor", "Detection Reason",
         "Script 1", "Script 2", "Binary Category", "Opposition Type",
         "Situation", "Target", "Orientation", "Narrative Strategy",
-        "Wordplay?", "Wordplay Level", "Wordplay Subtype", "Wordplay Note",
-        "Register Effect?", "Register Subtype", "Register Note",
-        "Justification", "Reviewer Verdict", "Reviewer Notes",
+        "Wordplay?", "Wordplay Level", "Wordplay Subtype",
+        "Register Effect?", "Register Subtype",
+        "Reviewer Verdict", "Reviewer Notes",
     ]
+    wrap_cols = {ann_headers.index(h) + 1 for h in
+                 ("Humorous Text", "Detection Reason", "Reviewer Notes")}
+    verdict_col = get_column_letter(ann_headers.index("Reviewer Verdict") + 1)
     for c, h in enumerate(ann_headers, start=1):
         ann_ws.cell(row=1, column=c, value=h)
     _style_header(ann_ws, 1, len(ann_headers))
@@ -118,9 +122,11 @@ def build_report(analysis: Analysis, story_text: str, out_path: Path) -> None:
             a.narrative_level_of_classification.value,
             seg_label.get(al.segment_id, al.segment_id),
             al.line_type.value,
+            al.confidence or "",
             f"{al.span.line_start}\u2013{al.span.line_end}",
             al.span.text,
             al.disjunctor or "",
+            al.brief_reason or "",
             so.script_1,
             so.script_2,
             so.essential_binary_category.value,
@@ -132,17 +138,14 @@ def build_report(analysis: Analysis, story_text: str, out_path: Path) -> None:
             "Yes" if lang.is_wordplay else "No",
             lang.wordplay_level.value if lang.wordplay_level else "",
             lang.wordplay_subtype or "",
-            lang.wordplay_note,
             "Yes" if lang.is_register_effect else "No",
             lang.register_effect_subtype or "",
-            lang.register_note,
-            a.justification,
             "",  # Reviewer Verdict — blank for user
             "",  # Reviewer Notes — blank for user
         ]
         for c, v in enumerate(values, start=1):
             cell = ann_ws.cell(row=row, column=c, value=v)
-            cell.alignment = WRAP if c in (8, 25, 27) else TOP
+            cell.alignment = WRAP if c in wrap_cols else TOP
 
         # Hyperlink back to the first line of the story span
         ctx_cell = ann_ws.cell(row=row, column=2, value="\u25b6 view in story")
@@ -150,17 +153,17 @@ def build_report(analysis: Analysis, story_text: str, out_path: Path) -> None:
         ctx_cell.font = HYPERLINK_FONT
 
     _autofit(ann_ws, {
-        1: 10, 2: 14, 3: 12, 4: 14, 5: 22, 6: 14, 7: 10, 8: 45, 9: 20,
-        10: 22, 11: 22, 12: 18, 13: 20, 14: 20, 15: 20, 16: 12, 17: 18,
-        18: 10, 19: 14, 20: 18, 21: 30, 22: 14, 23: 18, 24: 30, 25: 40,
-        26: 16, 27: 30,
+        1: 10, 2: 14, 3: 12, 4: 14, 5: 22, 6: 14, 7: 12, 8: 10, 9: 45,
+        10: 20, 11: 40, 12: 22, 13: 22, 14: 18, 15: 20, 16: 20, 17: 20,
+        18: 12, 19: 18, 20: 10, 21: 14, 22: 18, 23: 14, 24: 18, 25: 16,
+        26: 30,
     })
     ann_ws.auto_filter.ref = f"A1:{get_column_letter(len(ann_headers))}{len(analysis.lines) + 1}"
 
     # Reviewer Verdict dropdown
     dv = DataValidation(type="list", formula1='"Agree,Disagree,Partial,Unsure"', allow_blank=True)
     ann_ws.add_data_validation(dv)
-    dv.add(f"Z2:Z{len(analysis.lines) + 1}")
+    dv.add(f"{verdict_col}2:{verdict_col}{len(analysis.lines) + 1}")
 
     # Segments sheet
     seg_ws = wb.create_sheet("Segments")

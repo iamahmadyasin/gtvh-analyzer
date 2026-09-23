@@ -25,10 +25,7 @@ def assemble(
     annot_by_id = {a.line_id: a for a in annotations}
     lines: list[AnnotatedLine] = []
     for d in detected:
-        annot = annot_by_id.get(d.line_id)
-        if annot is None:
-            # Shouldn't happen if concurrency completed, but be defensive
-            continue
+        annot = annot_by_id[d.line_id]
         lines.append(
             AnnotatedLine(
                 line_id=d.line_id,
@@ -37,6 +34,9 @@ def assemble(
                 line_type=d.line_type,
                 disjunctor=d.disjunctor,
                 disjunctor_span=d.disjunctor_span,
+                confidence=d.confidence,
+                setup=d.setup,
+                brief_reason=d.brief_reason,
                 annotation=annot,
             )
         )

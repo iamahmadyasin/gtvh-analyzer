@@ -49,11 +49,14 @@ async def annotate_line(
         f"Produce the full KR annotation for this line. Use line_id "
         f"{line.line_id!r} exactly."
     )
-    return await llm.call_structured(
+    annotation = await llm.call_structured(
         system_prompt=load_prompt("annotate_krs"),
         user_message=user_msg,
         response_model=KRAnnotation,
     )
+    # Assembly matches annotations to lines by id; don't trust the echo.
+    annotation.line_id = line.line_id
+    return annotation
 
 
 async def annotate_all_lines(
@@ -68,10 +71,8 @@ async def annotate_all_lines(
 
     async def _one(line: DetectedLine) -> KRAnnotation:
         async with sem:
-            segment = seg_by_id.get(line.segment_id)
-            if segment is None:
-                # Fall back to the first segment; shouldn't happen if detection is well-behaved
-                segment = segments[0]
+            # detect.py stamps segment_id, so this lookup always succeeds
+            segment = seg_by_id[line.segment_id]
             return await annotate_line(line, segment, story_lines, llm)
 
     return await asyncio.gather(*[_one(l) for l in lines])
