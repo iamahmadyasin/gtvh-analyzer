@@ -5,7 +5,8 @@ One LLM call per detected line, fanned out with a concurrency cap. Each call see
 
 from __future__ import annotations
 
-from llm import LLMClient, load_prompt, run_all
+from llm import LLMClient, run_all
+from promptlib import load_prompt
 from schemas import DetectedLine, KRAnnotation, NarrativeSegment
 
 
@@ -24,38 +25,36 @@ async def annotate_line(
     segment: NarrativeSegment,
     story_lines: list[str],
     llm: LLMClient,
-    story_context: str | None,
+    full_story: str | None,
 ) -> KRAnnotation:
-    if story_context is not None:
-        context = ""
-    else:
-        context = (
-            f"Local context (surrounding lines with global numbers):\n"
-            f"{_context_window(story_lines, line)}\n\n"
-        )
-    task = (
-        f"Containing segment:\n"
-        f"- segment_id: {segment.segment_id}\n"
-        f"- label: {segment.label}\n"
-        f"- narrative_level: {segment.narrative_level.value}\n"
-        f"- line_range: [{segment.line_start}, {segment.line_end}]\n"
-        f"- terminal line of segment: {segment.line_end}\n"
-        f"- description: {segment.description}\n\n"
-        f"Line to annotate:\n"
-        f"- line_id: {line.line_id}\n"
-        f"- line_type: {line.line_type.value}\n"
-        f"- span: lines {line.span.line_start}-{line.span.line_end}\n"
-        f"- text: {line.span.text!r}\n"
-        f"- disjunctor: {line.disjunctor!r}\n"
-        f"- setup: {line.setup!r}\n"
-        f"- brief_reason: {line.brief_reason!r}\n\n"
-        f"{context}"
-        f"Produce the full KR annotation for this line. Use line_id "
-        f"{line.line_id!r} exactly."
+    prompt = load_prompt("annotate_krs")
+    local_context = "" if full_story is not None else prompt.render(
+        "local_context", window=_context_window(story_lines, line)
     )
+    task = prompt.render(
+        "task",
+        segment_id=segment.segment_id,
+        label=segment.label,
+        narrative_level=segment.narrative_level.value,
+        line_start=segment.line_start,
+        line_end=segment.line_end,
+        description=segment.description,
+        line_id=line.line_id,
+        line_type=line.line_type.value,
+        span_start=line.span.line_start,
+        span_end=line.span.line_end,
+        text=line.span.text,
+        disjunctor=line.disjunctor,
+        setup=line.setup,
+        brief_reason=line.brief_reason,
+        local_context=local_context,
+    )
+    messages = [task] if full_story is None else [
+        prompt.render("story_context", story=full_story), task
+    ]
     annotation = await llm.call_structured(
-        system_prompt=load_prompt("annotate_krs"),
-        user_message=[story_context, task] if story_context is not None else task,
+        system_prompt=prompt.system,
+        user_message=messages,
         response_model=KRAnnotation,
     )
     # Assembly matches annotations to lines by id; don't trust the echo.
@@ -69,13 +68,13 @@ async def annotate_all_lines(
     story_lines: list[str],
     llm: LLMClient,
     concurrency: int = 10,
-    story_context: str | None = None,
+    full_story: str | None = None,
 ) -> list[KRAnnotation]:
     seg_by_id = {s.segment_id: s for s in segments}
 
     async def _one(line: DetectedLine) -> KRAnnotation:
         # detect.py stamps segment_id, so this lookup always succeeds
         segment = seg_by_id[line.segment_id]
-        return await annotate_line(line, segment, story_lines, llm, story_context)
+        return await annotate_line(line, segment, story_lines, llm, full_story)
 
     return await run_all(lines, _one, concurrency)

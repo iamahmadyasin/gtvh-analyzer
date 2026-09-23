@@ -30,19 +30,19 @@ flowchart LR
     D --> E[analysis.json]
 ```
 
-1. **Segmentation** (`prompts/segment.md`) partitions the story into
+1. **Segmentation** (`prompts/segment.yaml`) partitions the story into
    narrative segments using metatextual markers, setting changes, and
    character entries/exits. One call per story. This matters because
    a *punch* line is defined by ending a narrative unit, and a *jab*
    line by not, so the pipeline needs to know where units begin and
    end before it can classify anything.
 
-2. **Line detection** (`prompts/detect_lines.md`) for each segment, it
+2. **Line detection** (`prompts/detect_lines.yaml`) for each segment, it
    locates humorous spans and classifies them as `discrete`
    (single-trigger), `register_clash` (diffuse register humor), or
    `irony`. One call per segment, run concurrently.
 
-3. **KR annotation** (`prompts/annotate_krs.md`) for each detected
+3. **KR annotation** (`prompts/annotate_krs.yaml`) for each detected
    line, fills in the full Knowledge Resource bundle with local
    context: Script Opposition, Situation, Target, 
    Narrative Strategy, and Language. One call per line, heavily parallelized.
@@ -131,16 +131,17 @@ gtvh-analyzer/
 ├── output/                   # analysis JSON lands here
 │   └── .checkpoints/         # saved model responses (safe to delete)
 ├── prompts/
-│   ├── segment.md            # Stage 1
-│   ├── detect_lines.md       # Stage 2
-│   └── annotate_krs.md       # Stage 3
+│   ├── segment.yaml          # Stage 1
+│   ├── detect_lines.yaml     # Stage 2
+│   └── annotate_krs.yaml     # Stage 3
 ├── stages/
 │   ├── segment.py
 │   ├── detect.py
 │   └── annotate.py
 ├── schemas.py                # Pydantic schemas
 ├── textutils.py              # shared text helpers (no LLM dependency)
-├── llm.py                    # OpenAI structured-output wrapper
+├── llm.py                    # OpenAI structured-output wrapper, caching, checkpoints
+├── promptlib.py              # loads and checks prompts/*.yaml
 ├── pipeline.py               # end-to-end orchestration
 ├── cli.py                    # entry point
 ├── make_report.py            # builds a reviewable .xlsx from an analysis JSON
@@ -151,12 +152,26 @@ gtvh-analyzer/
 
 ## Editing prompts
 
-Prompts are plain `.md` files read from disk on every run. You can edit and
-re-run, no restart needed. If an edit changes what fields a stage
-*returns* (not just how it reasons), update the matching Pydantic
-model in `schemas.py` to match; nothing else in the codebase needs to
-change, since `stages/`, `pipeline.py`, and `cli.py` only ever handle
-these as opaque validated objects.
+Each stage's prompt is a YAML file in `prompts/`, read from disk on
+every run, so you can edit and re-run with no restart. A file has
+three parts:
+
+- `system`: the instructions sent as the system message. The text
+  inside is ordinary markdown in a `|` block; keep it indented.
+- `templates`: the user message(s) the stage fills in, using Python
+  `str.format` fields such as `{segment_id}`. Write a literal brace as
+  `{{` or `}}`. Shared parts (the full story) come first so they can be
+  served from the prompt cache.
+- `enums`: schema enums whose every value must appear in `system` in
+  backticks (for example `` `obscene_nonobscene` ``). The file refuses
+  to load if the prompt and `schemas.py` disagree, so a renamed or
+  added category can't silently go undocumented.
+
+If an edit changes what fields a stage *returns* (not just how it
+reasons), update the matching Pydantic model in `schemas.py` to match;
+nothing else in the codebase needs to change, since `stages/`,
+`pipeline.py`, and `cli.py` only ever handle these as opaque validated
+objects.
 
 ## Reviewing annotations
 

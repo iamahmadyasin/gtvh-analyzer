@@ -1,7 +1,7 @@
 """Stage 2: humorous instance detection.
 
-One LLM call per segment, fanned out with a concurrency cap. With a
-story context, every call starts with the same full numbered story
+One LLM call per segment, fanned out with a concurrency cap. With the
+full story, every call starts with the same numbered story text
 (served from the prompt cache after the first call) and names the lines
 to analyze; without one, each call gets only its segment's text.
 
@@ -14,7 +14,8 @@ twice: once with the parent and once on their own.
 
 from __future__ import annotations
 
-from llm import LLMClient, load_prompt, run_all
+from llm import LLMClient, run_all
+from promptlib import Prompt, load_prompt
 from schemas import DetectedLine, DetectionResult, NarrativeSegment
 
 
@@ -52,17 +53,16 @@ def _ranges(line_numbers: list[int]) -> str:
     return ", ".join(f"{a}-{b}" if a != b else str(a) for a, b in runs)
 
 
-def _segment_text(story_lines: list[str], owned: list[int]) -> str:
+def _segment_text(prompt: Prompt, story_lines: list[str], owned: list[int]) -> str:
     """The numbered lines a segment owns, with a marker where lines were
     handed to an embedded segment."""
     parts: list[str] = []
     prev: int | None = None
     for line_no in owned:
         if prev is not None and line_no != prev + 1:
-            parts.append(
-                f"[lines {prev + 1}-{line_no - 1}: embedded segment, "
-                f"analyzed separately]"
-            )
+            parts.append(prompt.render(
+                "embedded_marker", start=prev + 1, end=line_no - 1
+            ).rstrip("\n"))
         parts.append(story_lines[line_no - 1])
         prev = line_no
     return "\n".join(parts)
@@ -73,45 +73,45 @@ async def detect_lines_in_segment(
     segment: NarrativeSegment,
     owned: list[int],
     llm: LLMClient,
-    story_context: str | None,
+    full_story: str | None,
 ) -> list[DetectedLine]:
-    segment_info = (
-        f"Segment info:\n"
-        f"- segment_id: {segment.segment_id}\n"
-        f"- label: {segment.label}\n"
-        f"- narrative_level: {segment.narrative_level.value}\n"
-        f"- line_range: [{segment.line_start}, {segment.line_end}]\n"
-        f"- description: {segment.description}\n\n"
+    prompt = load_prompt("detect_lines")
+    segment_info = prompt.render(
+        "segment_info",
+        segment_id=segment.segment_id,
+        label=segment.label,
+        narrative_level=segment.narrative_level.value,
+        line_start=segment.line_start,
+        line_end=segment.line_end,
+        description=segment.description,
     )
     owned_set = set(owned)
-    if story_context is not None:
+    if full_story is not None:
         handed_off = [
             n for n in range(segment.line_start, segment.line_end + 1)
             if n not in owned_set
         ]
         note = (
-            f"Lines {_ranges(handed_off)} belong to embedded segments that "
-            f"are analyzed separately; do not report humor located there.\n\n"
+            prompt.render("handed_off_note", handed_off=_ranges(handed_off))
             if handed_off else ""
         )
-        messages = [story_context, (
-            f"{segment_info}"
-            f"Lines to analyze: {_ranges(owned)}\n"
-            f"{note}"
-            f"Detect humorous lines within the lines to analyze, using the "
-            f"rest of the story only as context. Use the segment_id above "
-            f"in every detected line. Use the global line numbers shown."
-        )]
+        messages = [
+            prompt.render("story_context", story=full_story),
+            prompt.render(
+                "task_story",
+                segment_info=segment_info,
+                lines_to_analyze=_ranges(owned),
+                handed_off_note=note,
+            ),
+        ]
     else:
-        messages = [(
-            f"{segment_info}"
-            f"Segment text (with global line numbers):\n"
-            f"{_segment_text(story_lines, owned)}\n\n"
-            f"Detect humorous lines in this segment. Use the segment_id above "
-            f"in every detected line. Use the global line numbers shown."
+        messages = [prompt.render(
+            "task_local",
+            segment_info=segment_info,
+            segment_text=_segment_text(prompt, story_lines, owned),
         )]
     result = await llm.call_structured(
-        system_prompt=load_prompt("detect_lines"),
+        system_prompt=prompt.system,
         user_message=messages,
         response_model=DetectionResult,
     )
@@ -136,7 +136,7 @@ async def detect_all_lines(
     segments: list[NarrativeSegment],
     llm: LLMClient,
     concurrency: int = 5,
-    story_context: str | None = None,
+    full_story: str | None = None,
 ) -> list[DetectedLine]:
     owners = assign_line_owners(segments, len(story_lines))
     uncovered = len(story_lines) - sum(len(v) for v in owners.values())
@@ -145,7 +145,7 @@ async def detect_all_lines(
 
     async def _one(seg: NarrativeSegment) -> list[DetectedLine]:
         return await detect_lines_in_segment(
-            story_lines, seg, owners[seg.segment_id], llm, story_context
+            story_lines, seg, owners[seg.segment_id], llm, full_story
         )
 
     active = [s for s in segments if owners[s.segment_id]]

@@ -43,14 +43,6 @@ from pydantic import BaseModel
 T = TypeVar("T", bound=BaseModel)
 R = TypeVar("R")
 
-PROMPTS_DIR = Path(__file__).parent / "prompts"
-
-
-def load_prompt(name: str) -> str:
-    """Load a prompt file from prompts/. `name` is the stem (no extension)."""
-    path = PROMPTS_DIR / f"{name}.md"
-    return path.read_text(encoding="utf-8")
-
 
 def _sha256(obj: object) -> str:
     payload = json.dumps(obj, sort_keys=True, ensure_ascii=False)

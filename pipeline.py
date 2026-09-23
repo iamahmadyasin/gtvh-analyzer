@@ -56,21 +56,18 @@ async def analyze(
     or a few surrounding lines (fewer input tokens, less context)."""
     numbered = number_lines(story_text)
     story_lines = numbered.splitlines()
-    story_context = (
-        f"Full story, with global line numbers:\n\n{numbered}"
-        if context == "story" else None
-    )
+    full_story = numbered if context == "story" else None
 
     segments = await segment_narrative(numbered, llm)
 
     detected = await detect_all_lines(
         story_lines, segments, llm, concurrency=detect_concurrency,
-        story_context=story_context,
+        full_story=full_story,
     )
 
     annotations = await annotate_all_lines(
         detected, segments, story_lines, llm, concurrency=annotate_concurrency,
-        story_context=story_context,
+        full_story=full_story,
     )
 
     return assemble(segments, detected, annotations, filename)
