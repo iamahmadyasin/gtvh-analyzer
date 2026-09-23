@@ -80,13 +80,13 @@ class TextSpan(BaseModel):
 # Stage 1: Segmentation
 
 class NarrativeSegment(BaseModel):
-    segment_id: str                       # "NS-01"
+    segment_id: str
     label: str
     narrative_level: NarrativeLevel
-    line_start: int                       # inclusive
-    line_end: int                         # inclusive
-    parent_segment_id: Optional[str]      # None for level_0 / level_+n
-    is_terminal: bool                     # ends at its parent's end?
+    line_start: int
+    line_end: int
+    parent_segment_id: Optional[str]
+    is_terminal: bool
     segmentation_cue: str
     description: str
 
@@ -98,13 +98,13 @@ class SegmentationResult(BaseModel):
 # Stage 2: Detection
 
 class DetectedLine(BaseModel):
-    line_id: str                          # will be re-numbered globally
+    line_id: str
     span: TextSpan
     segment_id: str
     line_type: LineType
-    disjunctor: Optional[str]             # null for register_clash / irony
+    disjunctor: Optional[str]
     disjunctor_span: Optional[TextSpan]
-    setup: Optional[str]                  # brief Script 1 description
+    setup: Optional[str]
     brief_reason: str
     confidence: Literal["high", "medium", "low"]
 
@@ -116,10 +116,10 @@ class DetectionResult(BaseModel):
 # Stage 3: KR Annotation
 
 class ScriptOpposition(BaseModel):
-    script_1: str                         # concrete level, UPPERCASE
-    script_2: str                         # concrete level, UPPERCASE
-    essential_binary_category: BinaryCategory  # intermediate level
-    opposition_type: OppositionType            # abstract level
+    script_1: str
+    script_2: str
+    essential_binary_category: BinaryCategory 
+    opposition_type: OppositionType
 
 
 class LanguageKR(BaseModel):
@@ -132,9 +132,7 @@ class LanguageKR(BaseModel):
 
 
 class KRAnnotation(BaseModel):
-    # First on purpose: the model writes fields in schema order, so its
-    # analysis comes before, and informs, every categorical choice.
-    reasoning: str                        # brief analysis across Tasks 1-6
+    reasoning: str
     line_id: str
     classification: LineClassification
     narrative_level_of_classification: NarrativeLevel
@@ -145,11 +143,8 @@ class KRAnnotation(BaseModel):
     target: Optional[str]
     orientation: Orientation
     narrative_strategy: NarrativeStrategy
-    narrative_strategy_note: Optional[str]  # describes the form when "other"
+    narrative_strategy_note: Optional[str]
     language: LanguageKR
-
-
-# Assembled outputs
 
 class AnnotatedLine(BaseModel):
     line_id: str

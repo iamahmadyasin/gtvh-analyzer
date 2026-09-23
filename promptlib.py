@@ -1,17 +1,3 @@
-"""
-Load stage prompts from prompts/*.yaml.
-
-Each file holds the system prompt, the templates the stage fills in to
-build its user message(s), and the list of schema enums the system
-prompt must document. Loading fails loudly when the prompt stops
-mentioning a value that schemas.py allows (or names one that no longer
-exists), so a schema edit can't silently leave the prompt describing
-different categories from the ones the model is forced to choose from.
-
-Files are re-read on every call, so edits take effect on the next run
-with no restart.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass

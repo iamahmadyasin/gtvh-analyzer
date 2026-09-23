@@ -1,6 +1,8 @@
 """Stage 3: KR annotation.
 
-One LLM call per detected line, fanned out with a concurrency cap. Each call sees the line and its containing segment, plus either the full story (the same first message in every call, so it is served from the prompt cache after the first call) or a local window of surrounding lines.
+One LLM call per detected line, fanned out with a concurrency cap. Each call sees the line 
+and its containing segment, plus either the full story (the same first message in every call, 
+so it is served from the prompt cache after the first call) or a local window of surrounding lines.
 """
 
 from __future__ import annotations

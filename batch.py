@@ -1,22 +1,3 @@
-"""
-OpenAI Batch API client: the same `call_structured` contract as LLMClient,
-at the Batch API's discounted price, with results within 24 hours instead
-of immediately.
-
-How it fits the pipeline without changing any stage code: every story is
-analyzed at once, and `call_structured` only queues its request and waits.
-Once every story is waiting (no new requests for a moment), the whole
-queue is sent as one batch. So all stories' segmentation calls go in one
-batch, then all their detection calls, then all their annotation calls:
-three batches per run, each needing the previous one's results.
-
-Results are written to the same checkpoints as the online client, so a
-batch run and an online run of the same inputs share results. Each
-submitted batch is recorded under `<checkpoint_dir>/batches/` until its
-results are saved; if the process is stopped while waiting, re-running
-the same command picks the batch up again instead of paying for it twice.
-"""
-
 from __future__ import annotations
 
 import asyncio

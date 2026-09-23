@@ -87,8 +87,8 @@ Options:
 python cli.py --model gpt-5.6-luna --no-temperature \
     --detect-concurrency 1 --annotate-concurrency 1 \
     --context story      # or: local
-    # --fresh            # ignore saved checkpoints
-    # --batch            # Batch API: discounted, results within 24h
+    --fresh            # ignore saved checkpoints
+    --batch            # Batch API: discounted, results within 24h
 ```
 Concurrency defaults are low (to respect token-per-minute rate limits);
 raise them if your rate tier allows. The client retries automatically
@@ -234,7 +234,7 @@ while reviewing.
 
 ## Credits and Acknowledgments
 - **Ahmad Yasin** - Lead Developer & Lead Prompt Engineer
-- **Kahf-ul-Wara** - Annotation, Testing & Evaluation
+- **Kahf-ul-Wara** - Testing & Evaluation
 - **Hureeza Abid** - Initial Operationalization, Annotation & Prompt Development
 
 

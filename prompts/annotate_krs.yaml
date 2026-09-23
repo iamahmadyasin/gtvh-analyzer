@@ -1,16 +1,3 @@
-# Stage 3: Knowledge Resource annotation. One call per detected line.
-#
-# system:     sent as the system message. Edit freely; if you change the
-#             fields a stage *returns*, update schemas.py to match.
-# enums:      schema enums whose every value must appear in `system` in
-#             backticks (e.g. `level_0`). Checked on load, so the prompt
-#             can't silently drift from schemas.py.
-# templates:  the user message(s), filled with Python str.format fields
-#             ({name}). Write a literal brace as {{ or }}.
-#
-# Put anything shared between calls first: calls that start with the
-# same text are billed at the cached-input rate after the first one.
-
 name: annotate_krs
 version: 4
 enums: [LineType, NarrativeLevel, BinaryCategory, OppositionType, Orientation, WordplayLevel, NarrativeStrategy]
