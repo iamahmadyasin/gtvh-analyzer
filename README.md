@@ -65,16 +65,17 @@ git clone <this-repo>
 cd gtvh-analyzer
 
 python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
+source .venv/bin/activate
+Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-cp .env.example .env             # Windows: copy .env.example .env
-# edit .env and paste your OpenAI API key
+cp .env.example .env
+Windows: copy .env.example .env
 
 # drop one or more .txt story files into input/
-python cli.py --model gpt-5.6-luna --no-temperature   # writes output/<story>.json
+python cli.py --model gpt-5.6-luna --no-temperature
 
-python make_report.py                                 # writes output/<story>.xlsx
+python make_report.py
 ```
 `--model` is required. The `--no-temperature` flag is needed for the
 GPT-5.6 family and other models that only accept their default
@@ -282,7 +283,7 @@ This software was developed as the practical implementation of our academic rese
 ### Software Citation
 To cite the software repository itself you can use the [`CITATION.cff`](./CITATION.cff) file included in this repository, or use the following reference:
 
-> Yasin, Ahmad., Wara, Kahf-ul., & Abid, Hureeza. (2024). *GTVH Analyzer: A Tool for Analyzing Short Stories Using the General Theory of Verbal Humor* [Computer software]. GitHub. https://github.com/iamahmadyasin/gtvh-analyzer
+> Yasin, Ahmad., Wara, Kahf-ul., & Abid, Hureeza. (2026). *GTVH Analyzer: A Tool for Analyzing Short Stories Using the General Theory of Verbal Humor* [Computer software]. GitHub. https://github.com/iamahmadyasin/gtvh-analyzer
 
 ## License
 
