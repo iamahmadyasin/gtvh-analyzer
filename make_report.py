@@ -9,6 +9,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
+from openpyxl.worksheet.hyperlink import Hyperlink
 
 from schemas import Analysis, NarrativeStrategy
 
@@ -44,10 +45,13 @@ def build_report(analysis: Analysis, story_text: str, out_path: Path) -> None:
 
     # Map each global line number -> containing segment label
     def segment_for_line(line_no: int) -> str:
-        for seg in analysis.segments:
-            if seg.line_start <= line_no <= seg.line_end:
-                return seg.label
-        return ""
+        # Innermost segment, so lines of an embedded letter or speech show
+        # that segment rather than the story it sits in
+        containing = [s for s in analysis.segments
+                      if s.line_start <= line_no <= s.line_end]
+        if not containing:
+            return ""
+        return min(containing, key=lambda s: s.line_end - s.line_start).label
 
     # Map each global line number -> list of annotation line_ids touching it
     line_to_annotation_ids: dict[int, list[str]] = {i: [] for i in range(1, n_lines + 1)}
@@ -81,7 +85,7 @@ def build_report(analysis: Analysis, story_text: str, out_path: Path) -> None:
             ann_cell.value = ", ".join(ids)
             # Jump to the first annotation touching this line
             first_row = annotation_row[ids[0]]
-            ann_cell.hyperlink = f"#Annotations!A{first_row}"
+            ann_cell.hyperlink = Hyperlink(ref=ann_cell.coordinate, location=f"Annotations!A{first_row}")
             ann_cell.font = HYPERLINK_FONT
             for c in range(1, len(story_headers) + 1):
                 story_ws.cell(row=row, column=c).fill = HUMOR_ROW_FILL
@@ -153,7 +157,7 @@ def build_report(analysis: Analysis, story_text: str, out_path: Path) -> None:
 
         # Hyperlink back to the first line of the story span
         ctx_cell = ann_ws.cell(row=row, column=2, value="\u25b6 view in story")
-        ctx_cell.hyperlink = f"#Story!A{al.span.line_start + 1}"
+        ctx_cell.hyperlink = Hyperlink(ref=ctx_cell.coordinate, location=f"Story!A{al.span.line_start + 1}")
         ctx_cell.font = HYPERLINK_FONT
 
     _autofit(ann_ws, {

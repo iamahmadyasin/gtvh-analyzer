@@ -160,7 +160,9 @@ async def detect_all_lines(
         seen.add(key)
         all_lines.append(line)
 
-    # Renumber globally so IDs are unique across the whole story
+    # Renumber globally in story order, so IDs are unique and HL-001 is
+    # the first humorous line in the text, whichever segment found it
+    all_lines.sort(key=lambda line: (line.span.line_start, line.span.line_end))
     for i, line in enumerate(all_lines, start=1):
         line.line_id = f"HL-{i:03d}"
 
