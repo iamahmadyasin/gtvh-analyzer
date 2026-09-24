@@ -28,6 +28,7 @@ flowchart LR
     B --> C[Stage 2\nLine Detection]
     C --> D[Stage 3\nKR Annotation]
     D --> E[analysis.json]
+    E --> F[make_report.py\nreview workbook .xlsx]
 ```
 
 1. **Segmentation** (`prompts/segment.yaml`) partitions the story into
@@ -40,12 +41,18 @@ flowchart LR
 2. **Line detection** (`prompts/detect_lines.yaml`) for each segment, it
    locates humorous spans and classifies them as `discrete`
    (single-trigger), `register_clash` (diffuse register humor), or
-   `irony`. One call per segment, run concurrently.
+   `irony`. One call per segment. Lines inside an embedded segment (a
+   letter, a speech) are checked only with that segment, so no joke is
+   found twice. Line IDs (`HL-001`, ...) follow story order.
 
 3. **KR annotation** (`prompts/annotate_krs.yaml`) for each detected
-   line, fills in the full Knowledge Resource bundle with local
-   context: Script Opposition, Situation, Target, 
-   Narrative Strategy, and Language. One call per line, heavily parallelized.
+   line, writes a short `reasoning` first and then fills in the
+   Knowledge Resource bundle: Script Opposition, Situation, Target,
+   Narrative Strategy (from a fixed list), and Language. One call per
+   line.
+
+By default, detection and annotation calls see the full story as
+context (see `--context` below).
 
 Everything downstream of a stage only sees the Pydantic object that
 stage returns. Prompts are free to change wording as long as the
@@ -58,16 +65,16 @@ git clone <this-repo>
 cd gtvh-analyzer
 
 python -m venv .venv
-venv\Scripts\activate
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-cp .env.example .env
+cp .env.example .env             # Windows: copy .env.example .env
 # edit .env and paste your OpenAI API key
 
 # drop one or more .txt story files into input/
-python cli.py --model gpt-5.6-luna --no-temperature
+python cli.py --model gpt-5.6-luna --no-temperature   # writes output/<story>.json
 
-python make_report.py
+python make_report.py                                 # writes output/<story>.xlsx
 ```
 `--model` is required. The `--no-temperature` flag is needed for the
 GPT-5.6 family and other models that only accept their default
@@ -78,18 +85,32 @@ Single-file mode:
 ```bash
 python cli.py --model gpt-5.6-luna --no-temperature --file path/to/story.txt --out path/to/analysis.json
 
-python make_report.py --json output/x.json
+python make_report.py --json path/to/analysis.json --story path/to/story.txt
 ```
+
+`make_report.py` finds the story text in `input/` by its file name, so
+`--story` is only needed when the story lives somewhere else. With no
+arguments it builds a report for every JSON in `output/`.
 
 Options:
 
+| Flag | Default | What it does |
+|---|---|---|
+| `--model` | required | OpenAI model id |
+| `--no-temperature` | off | omit `temperature` (needed for models that reject it) |
+| `--file`, `--out` | all of `input/` | analyze one story, write its JSON to `--out` |
+| `--detect-concurrency` | 1 | parallel detection calls |
+| `--annotate-concurrency` | 1 | parallel annotation calls |
+| `--context` | `story` | `story` (full story as context) or `local` (segment / 5 lines) |
+| `--fresh` | off | ignore saved checkpoints and call the model again |
+| `--batch` | off | use the Batch API: discounted, results within 24 hours |
+
+For example:
+
 ```bash
-python cli.py --model gpt-5.6-luna --no-temperature \
-    --detect-concurrency 1 --annotate-concurrency 1 \
-    --context story      # or: local
-    --fresh            # ignore saved checkpoints
-    --batch            # Batch API: discounted, results within 24h
+python cli.py --model gpt-5.6-luna --no-temperature --annotate-concurrency 4 --context local
 ```
+
 Concurrency defaults are low (to respect token-per-minute rate limits);
 raise them if your rate tier allows. The client retries automatically
 on rate-limit errors with exponential backoff.
@@ -150,7 +171,7 @@ output tokens), so you can see what caching is saving.
 ```
 gtvh-analyzer/
 ├── input/                    # drop .txt story files here
-├── output/                   # analysis JSON lands here
+├── output/                   # analysis JSON and review workbooks land here
 │   └── .checkpoints/         # saved model responses (safe to delete)
 ├── prompts/
 │   ├── segment.yaml          # Stage 1
@@ -201,17 +222,21 @@ objects.
 `make_report.py` turns an analysis JSON into an Excel workbook built
 for manual review, not just a data dump.
 
-- **Story** sheet: the full text, one row per line, rows with
-  detected humor highlighted.
+- **Story** sheet: the full text, one row per line, with its segment
+  (the innermost one, for embedded letters and speeches). Rows with
+  detected humor are highlighted; unhighlighted rows are where to look
+  for humor the model missed.
 - **Annotations** sheet: one row per humorous line, every KR field as
-  a column, filterable and sortable.
+  a column, filterable and sortable. It also shows the detection
+  confidence and reason (filter out `low` to review the likeliest
+  lines first) and the model's reasoning for its annotation.
 - **Segments** sheet: narrative structure for context.
 
 Each annotation row links to its position in the Story sheet and back,
 so you can jump between "what's the surrounding context" and "what did
-the model say about this line" in one click. Two blank columns,
-*Reviewer Verdict* and *Reviewer Notes*, are there for you to fill in
-while reviewing.
+the model say about this line" in one click. Two blank columns are
+there for you to fill in while reviewing: *Reviewer Verdict* (a
+dropdown: Agree, Disagree, Partial, Unsure) and *Reviewer Notes*.
 
 ## Status & limitations
 
@@ -219,8 +244,9 @@ while reviewing.
   `THEORY.md` for why.
 - No held-out gold-annotated corpus yet. `make_report.py` produces a
   reviewable workbook (with Reviewer Verdict / Notes columns) for manual QA.
-- Single LLM provider (OpenAI) at the moment; `llm.py` is the only file
-  that would need to change to support another.
+- Single LLM provider (OpenAI) at the moment; `llm.py` (and `batch.py`
+  for `--batch`) are the only files that would need to change to
+  support another.
 - Stylistic-insights (Stage 4: strands, stacks, bridges/combs,
   line-position typology) is not yet built. This pipeline currently
   covers only per-line KR annotation.
