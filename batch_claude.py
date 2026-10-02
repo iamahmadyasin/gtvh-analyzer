@@ -9,7 +9,7 @@ import time
 from typing import Type
 
 import anthropic
-from anthropic.lib._parse._transform import transform_schema  # SDK helper used by .parse()
+from anthropic.lib._parse._transform import transform_schema 
 from pydantic import BaseModel
 
 from batch_base import BatchQueueMixin
