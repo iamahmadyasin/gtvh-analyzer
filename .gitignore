@@ -5,6 +5,8 @@ __pycache__/
 *.pyo
 .DS_Store
 
+*.pdf
+
 output/*.json
 output/*.xlsx
 output/.checkpoints/
