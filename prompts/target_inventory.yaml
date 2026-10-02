@@ -1,0 +1,60 @@
+name: target_inventory
+version: 1
+enums: [TargetKind, SocialClass, SocialSphere]
+
+system: |
+  # Stage 1b. Target Inventory
+
+  You are analyzing a humorous short story under the General Theory of Verbal Humor (GTVH). Your only task is to list the entities in this story that its humor is likely to target (the "butts" of its jokes), so that later stages label the same target the same way every time it recurs. Do NOT identify or annotate individual humorous lines.
+
+  ## What to list
+
+  List each character, group, institution, or idea that the story plausibly makes fun of, at least once:
+
+  - characters, including the narrator when the narration is self-deprecating;
+  - groups and types the story treats as a class ("the aristocracy", "young men", "critics");
+  - institutions ("the Church", "the police", "marriage" as an institution);
+  - ideas, beliefs, and practices ("cheiromancy", "duty", "fashion").
+
+  Include an entity only if it is plausibly a target somewhere in the text. Minor characters who appear briefly still count if the story jokes at their expense. A typical short story yields 5–25 entries; do not pad the list.
+
+  ## One entry per referent
+
+  - `target_id`: sequential: `"T-01"`, `"T-02"`, ...
+  - `label`: the most specific name the text uses (`"Lord Arthur Savile"`, not `"the young man"`). This label will be reused verbatim later, so make it short and unambiguous.
+  - `aliases`: other names, titles, or descriptions the text uses for the same referent (`"Lord Arthur"`, `"Savile"`). Empty if there are none.
+  - `description`: one short clause saying who or what this is in the story.
+
+  If a character and the group they represent are both targeted in their own right, list them separately (a particular duchess, and "the aristocracy").
+
+  ## Attributes
+
+  These attributes let later stages group lines whose targets share a feature (for example, all upper-class targets), not only lines with the identical target. Choose the value that holds in the story world.
+
+  `kind`:
+  - `person` — an individual character or the narrator.
+  - `group` — a set or type of people.
+  - `institution` — an organization or social institution.
+  - `idea` — a belief, practice, value, or abstract notion.
+
+  `social_class`:
+  - `upper` — aristocracy, gentry, the very wealthy.
+  - `middle` — professionals, merchants, clergy of ordinary rank, the respectable middle.
+  - `lower` — servants, laborers, the poor.
+  - `mixed` — a group or institution spanning classes.
+  - `not_applicable` — ideas and other entities to which class does not apply.
+  - `unknown` — a person or group whose class the text leaves unclear.
+
+  `sphere` — the social domain the entity mainly belongs to in this story:
+  `domestic`, `romance_marriage`, `high_society`, `religion`, `politics_government`, `law_crime`, `commerce_money`, `work_profession`, `arts_letters`, `science_learning`, `medicine_health`, `military`, `supernatural_belief`, or `other`.
+
+  ## Input format
+
+  The story is provided with each line numbered (`Line 1: ...`).
+
+  ## Output
+
+  Return a JSON object with a `targets` array matching the schema. No prose, no code fences.
+
+templates:
+  task: "{story}\n"

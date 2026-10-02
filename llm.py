@@ -200,21 +200,61 @@ class LLMClient:
         if self.temperature is not None:
             kwargs["temperature"] = self.temperature
 
+        async def _call():
+            completion = await self.client.chat.completions.parse(**kwargs)
+            self.usage.api_calls += 1
+            self._record_usage(completion)
+            message = completion.choices[0].message
+            if message.parsed is None:
+                raise RuntimeError(
+                    f"Model returned no parsed content for "
+                    f"{response_model.__name__}. Refusal: {message.refusal!r}"
+                )
+            return message.parsed
+
+        result = await self._with_retries(_call)
+        self._save_checkpoint(checkpoint, result)
+        return result
+
+    async def embed(self, texts: Sequence[str], model: str) -> list[list[float]]:
+        """Embedding vectors for `texts`, in order. Checkpointed like
+        structured calls, so re-running normalization is free."""
+        texts = list(texts)
+        if not texts:
+            return []
+        path = None
+        if self.checkpoint_dir is not None:
+            key = _sha256({"embed_model": model, "texts": texts})
+            path = self.checkpoint_dir / key[:2] / f"{key}.json"
+            if not self.fresh and path.exists():
+                try:
+                    self.usage.checkpoint_hits += 1
+                    return json.loads(path.read_text(encoding="utf-8"))
+                except (OSError, ValueError):
+                    self.usage.checkpoint_hits -= 1  # unreadable: recompute
+
+        async def _call():
+            response = await self.client.embeddings.create(model=model, input=texts)
+            self.usage.api_calls += 1
+            self.usage.input_tokens += getattr(response.usage, "prompt_tokens", 0) or 0
+            return [item.embedding for item in sorted(response.data, key=lambda d: d.index)]
+
+        vectors = await self._with_retries(_call)
+        if path is not None:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = path.with_suffix(".tmp")
+            tmp.write_text(json.dumps(vectors), encoding="utf-8")
+            os.replace(tmp, path)
+        return vectors
+
+    async def _with_retries(self, call: Callable[[], Awaitable[R]]) -> R:
+        """Run one API request, retrying rate limits (honoring retry-after)
+        and transient server or connection errors with backoff."""
         last_exc: Exception | None = None
 
         for attempt in range(self.max_retries):
             try:
-                completion = await self.client.chat.completions.parse(**kwargs)
-                self.usage.api_calls += 1
-                self._record_usage(completion)
-                message = completion.choices[0].message
-                if message.parsed is None:
-                    raise RuntimeError(
-                        f"Model returned no parsed content for "
-                        f"{response_model.__name__}. Refusal: {message.refusal!r}"
-                    )
-                self._save_checkpoint(checkpoint, message.parsed)
-                return message.parsed
+                return await call()
 
             except RateLimitError as exc:
                 last_exc = exc

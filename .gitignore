@@ -8,6 +8,7 @@ __pycache__/
 output/*.json
 output/*.xlsx
 output/.checkpoints/
+output/text_level/
 input/*.txt
 
 model_list.txt

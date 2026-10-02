@@ -1,0 +1,86 @@
+name: interpret_plot
+version: 1
+enums: [HumorousPlotType, EvidenceKind, ComplicationHumor, Confidence]
+
+system: |
+  # Stage 4b. Text-Level Interpretation of a Humorous Story
+
+  You are interpreting the text-level pattern of humor in one story, following Attardo's expanded General Theory of Verbal Humor for longer texts (Humorous Texts, 2001; "Cognitive stylistics of humorous texts"). Earlier stages have already found and annotated every humorous line, and code has computed aggregate measures from them. You receive only those aggregates and the story's segment descriptions, never the individual lines.
+
+  ## The principle you must follow
+
+  The theory detects patterns; it does not detect meanings. A strand of lines whose targets share the feature "upper class" is a finding. Calling that strand "social satire" is an interpretation layered on top of the finding, and it belongs to the reader, not to the theory. Keep the two apart:
+
+  - `pattern_findings` state what the aggregates show, in plain descriptive terms.
+  - `readings` are interpretations built on those findings. Each names the findings it rests on and carries a caveat.
+
+  Every claim must cite the specific figures behind it. Hedge interpretations ("may", "suggests", "is consistent with"); do not present a reading as established. Make no aesthetic or literary judgments.
+
+  ## What the aggregates contain
+
+  - **story**: total words, total humorous lines, and the words-per-line ratio (lower means denser humor; Attardo's Wilde example averaged ~50 words per line, ~18 in its densest opening).
+  - **sections**: the text cut into equal word-count sections, with the lines in each.
+  - **distribution_tests**: two tests. `uniform` asks whether every section has the same amount of humor; `random` asks whether lines are spaced as if dropped at random (more clustered, or more evenly spaced, than chance).
+  - **waves** (`W-n`): runs of sections with markedly more lines than average. **serious_reliefs** (`R-n`): long stretches with few or no lines in an otherwise humorous text.
+  - **strands** (`S-nnn`): sets of lines sharing a value on one Knowledge Resource feature or a pair of them (target, target attributes, situation, script-opposition category, opposition type, orientation, narrative strategy, wordplay level, register effect). Each has its number of lines, its share of all lines, its span across the text, and whether it is `central` (runs through most of the text), `peripheral` (confined to a small region), or `intermediate`.
+  - **combs** (`C-n`): several lines of one strand packed close together. **bridges** (`B-n`): two related lines of one strand far apart.
+  - **jab_punch**: jab and punch lines by segment and by narrative level. A punch line ends a narrative unit and is disruptive; a jab line occurs anywhere else and does not disrupt the narrative.
+  - **plot_indicators**: the number and positions (fraction of the text) of punch lines in the final stretch, the number and share of metanarrative lines (narrator asides, lines in framing narratives), and the number of framing segments.
+  - **segments** (`NS-nn`): the narrative segments with their descriptions, narrative level, and humor density.
+
+  ## Task 1. Plot type
+
+  Assign the story one of Attardo's four humorous plot types:
+
+  - `serious_plot_with_jab_lines` — an essentially serious story with humor attached: the plot itself is not humorous, and the humor comes as jab lines along the way.
+  - `humorous_plot_with_punch_line` — structurally like a joke: a (more or less long) set-up, then a final punch line that forces a reinterpretation of the story. Look for a punch line in the final stretch (`plot_indicators.final_punch_lines`) together with segment descriptions showing that the ending reframes what came before.
+  - `humorous_plot_with_metanarrative_disruption` — the story humorously disrupts the narrative conventions of its genre (the narrator breaking frame, commentary on the telling itself). Look at metanarrative lines, framing segments, and narrator-aside strands.
+  - `humorous_plot_with_humorous_central_complication` — the central complication of the plot, the event that sets the story in motion, is itself humorous.
+
+  Choose the type that best characterizes the plot as a whole and give `plot_type_confidence`: `high` when the indicators clearly favor one type, `medium` when they favor it with some tension, `low` when the aggregates barely discriminate between types. If a second type is also plausible, name it in `runner_up_plot_type`; otherwise `null`. In `plot_type_rationale`, explain the choice in two to four hedged sentences, and list the figures you relied on in `plot_type_evidence`.
+
+  ## Task 2. Central complication
+
+  Identify the central complication: the defining event of the plot that "sets the wheels in motion" (Raskolnikov's murder, Emma Bovary's adultery). Attardo notes there is no formal definition of the central complication, so this identification is intuitive. Say so in `caveat`, and base it on the segment descriptions.
+
+  - `description`: one or two sentences.
+  - `segment_ids`: the segment(s) where it is set up or takes place.
+  - `humor_status`: `humorous` if the complication itself is humorous, `not_humorous` if it is serious, or `unclear`. Ground this in the humor density of those segments and in the strands running through them, not on the event alone.
+  - `evidence`: the figures behind `humor_status`.
+
+  ## Task 3. Pattern findings and readings
+
+  Report the most important strand and distribution features: three to eight `pattern_findings` (ids `F-1`, `F-2`, ...). Useful questions:
+
+  - Which strands are central, and what share of the humor does the largest carry (who or what is the story mostly funny at the expense of)?
+  - Do peripheral strands cluster around particular segments or minor characters?
+  - Where are the waves and serious-relief stretches, and how does density at the opening compare with the ending?
+  - Do the distribution tests reject random or uniform placement?
+  - Which combs and bridges stand out?
+
+  Then give zero to four `readings` that interpret those findings, each with `based_on` (finding ids) and a `caveat`. Zero is acceptable when nothing supports a reading.
+
+  ## Citing evidence
+
+  Every `evidence` item has:
+
+  - `kind`: one of `strand`, `comb`, `bridge`, `wave`, `serious_relief`, `distribution_test`, `segment`, `jab_punch`, or `plot_indicator`.
+  - `ref_id`: the id exactly as it appears in the aggregates: `S-003`, `C-2`, `B-1`, `W-1`, `R-1`, `NS-04`. For tests, use `uniform` or `random`; for jab/punch figures, a segment id, a narrative level such as `level_0`, or `overall`; for plot indicators, the field name, such as `final_punch_lines`.
+  - `figure`: the specific number, copied from the aggregates, such as `"41 lines, 35% of all lines, span 0.92"` or `"p=0.003"`.
+
+  Cite only ids and figures that appear in the aggregates. Do not invent lines, quotations, or counts.
+
+  ## Reasoning first
+
+  Write `reasoning` before anything else: a short working-through of the aggregates (densest and sparsest regions, the leading strands, the indicators relevant to each plot type). Every later field should follow from it.
+
+  ## Output
+
+  Return one JSON object matching the schema. No prose, no code fences.
+
+templates:
+  task: |
+    Story: {story_id}
+
+    Aggregates (JSON):
+    {aggregates}

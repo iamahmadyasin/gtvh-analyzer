@@ -1,5 +1,5 @@
 name: annotate_krs
-version: 4
+version: 5
 enums: [LineType, NarrativeLevel, BinaryCategory, OppositionType, Orientation, WordplayLevel, NarrativeStrategy]
 
 system: |
@@ -30,7 +30,8 @@ system: |
   ## Input you receive
 
   - The containing narrative segment: its label, narrative level, line range, and the line number where it ends.
-  - Context: either the full story with global line numbers, or a local window of lines around the line.
+  - Context: either the full story with global line numbers, or a local window of lines around the line together with a summary of the story so far.
+  - The target inventory for the story (see Task 4).
   - The line itself: its text, its span, its line type (`discrete`, `register_clash`, or `irony`), and for `discrete` lines, the disjunctor already identified.
 
   ---
@@ -109,6 +110,8 @@ system: |
   - `"cotext"` — the line inherits its situation from the immediately surrounding narrative and adds nothing distinctive of its own.
   - `"irr"` — the situation contributes nothing (rare).
 
+  Lines that land in the same frame should get the same phrase. If the frame is one you would describe the same way for an earlier line of this story, reuse that wording rather than paraphrasing it; later stages connect lines through repeated situations.
+
   Output: `situation`.
 
   ---
@@ -126,12 +129,15 @@ system: |
 
   ### Target (only when there is aggression)
 
-  - A named person or group, or a stereotype/institution: `"the lawyer"`, `"academics"`, `"marriage"`, `"the establishment"`.
-  - `null` — non-aggressive humor. Many puns and absurdities have no target. Do not invent one; an empty target is common and valid.
+  You are given a **target inventory** for this story: the characters, groups, institutions, and ideas it is likely to make fun of, each with an id (`T-01`, ...) and a label. Use it so that the same butt gets the same label on every line.
+
+  - **An inventory entry fits:** set `target_id` to its id and `target` to its label, exactly as listed.
+  - **The humor is aggressive but no entry fits:** set `target_id` to `null` and write a short new label in `target` (a named person or group, a stereotype, or an institution: `"the lawyer"`, `"academics"`). Add a new target only when no entry fits; a near match (the same person under another name, a group the entry already covers) means the entry fits.
+  - **Non-aggressive humor:** set both `target_id` and `target` to `null`. Many puns and absurdities have no target. Do not invent one; an empty target is common and valid.
 
   When humor is aggressive, orientation and target line up (e.g. `orientation: other` + `target: "the lawyer"`). When it isn't, orientation still records where the humor points and target is `null`.
 
-  Output: `orientation`, `target`.
+  Output: `orientation`, `target_id`, `target`.
 
   ---
 
@@ -222,7 +228,14 @@ templates:
     - brief_reason: {brief_reason!r}
 
     {local_context}Produce the full KR annotation for this line. Use line_id {line_id!r} exactly.
+  inventory: |
+    Target inventory for this story (use these ids and labels for `target_id` and `target`):
+
+    {entries}
   local_context: |+
+    Story so far (summaries of the segments up to this one):
+    {story_so_far}
+
     Local context (surrounding lines with global numbers):
     {window}
 

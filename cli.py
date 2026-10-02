@@ -13,6 +13,7 @@ from pathlib import Path
 
 from batch import BatchLLMClient
 from llm import LLMClient, Usage
+from normalize import NormalizationParams
 from pipeline import analyze
 
 
@@ -29,6 +30,8 @@ async def analyze_one(
     detect_concurrency: int,
     annotate_concurrency: int,
     context: str,
+    normalization: NormalizationParams,
+    embedding_model: str,
 ) -> None:
     print(f"→ Analyzing {input_path.name}")
     story = input_path.read_text(encoding="utf-8")
@@ -39,6 +42,8 @@ async def analyze_one(
         detect_concurrency=detect_concurrency,
         annotate_concurrency=annotate_concurrency,
         context=context,
+        normalization=normalization,
+        embedding_model=embedding_model,
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
@@ -48,7 +53,8 @@ async def analyze_one(
     print(f"  wrote {output_path}")
     print(
         f"  segments={len(result.segments)} "
-        f"lines={len(result.lines)}"
+        f"lines={len(result.lines)} "
+        f"targets_in_inventory={len(result.target_inventory)}"
     )
 
 
@@ -105,8 +111,9 @@ async def _main() -> None:
         help="What detection and annotation calls see besides their own "
              "segment/line. 'story' (default): the full story, sent as a "
              "shared prefix that the prompt cache bills at the cached rate "
-             "after the first call. 'local': only the segment text or a "
-             "5-line window; fewer tokens but less context.",
+             "after the first call. 'local': only the segment text (detection) "
+             "or a 5-line window plus a 'story so far' built from the "
+             "segment descriptions (annotation); fewer tokens, less context.",
     )
     parser.add_argument(
         "--fresh",
@@ -122,6 +129,35 @@ async def _main() -> None:
              "one batch. If stopped while waiting, re-run the same command "
              "to resume.",
     )
+    defaults = NormalizationParams()
+    parser.add_argument(
+        "--normalize",
+        choices=["embeddings", "string"],
+        default=defaults.method,
+        help="How situation phrases and new targets are grouped into "
+             "canonical labels: OpenAI embeddings (default; falls back to "
+             "string similarity if the call fails) or string similarity "
+             "(no API call).",
+    )
+    parser.add_argument(
+        "--embedding-model",
+        default="text-embedding-3-small",
+        help="Embedding model for --normalize embeddings.",
+    )
+    parser.add_argument(
+        "--situation-threshold",
+        type=float,
+        default=defaults.situation_threshold,
+        help="Minimum similarity (0-1) for two situation phrases to share a "
+             "canonical label.",
+    )
+    parser.add_argument(
+        "--target-threshold",
+        type=float,
+        default=defaults.target_threshold,
+        help="Minimum similarity (0-1) for a new target to be merged with an "
+             "inventory entry or another new target.",
+    )
     args = parser.parse_args()
 
     client_cls = BatchLLMClient if args.batch else LLMClient
@@ -131,7 +167,17 @@ async def _main() -> None:
         checkpoint_dir=CHECKPOINT_DIR,
         fresh=args.fresh,
     )
-    run_opts = (args.detect_concurrency, args.annotate_concurrency, args.context)
+    run_opts = (
+        args.detect_concurrency,
+        args.annotate_concurrency,
+        args.context,
+        NormalizationParams(
+            method=args.normalize,
+            situation_threshold=args.situation_threshold,
+            target_threshold=args.target_threshold,
+        ),
+        args.embedding_model,
+    )
     OUTPUT_DIR.mkdir(exist_ok=True)
 
     if args.file:

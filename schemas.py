@@ -72,6 +72,39 @@ class NarrativeStrategy(str, Enum):
     OTHER = "other"
 
 
+class TargetKind(str, Enum):
+    PERSON = "person"
+    GROUP = "group"
+    INSTITUTION = "institution"
+    IDEA = "idea"
+
+
+class SocialClass(str, Enum):
+    UPPER = "upper"
+    MIDDLE = "middle"
+    LOWER = "lower"
+    MIXED = "mixed"
+    NOT_APPLICABLE = "not_applicable"
+    UNKNOWN = "unknown"
+
+
+class SocialSphere(str, Enum):
+    DOMESTIC = "domestic"
+    ROMANCE_MARRIAGE = "romance_marriage"
+    HIGH_SOCIETY = "high_society"
+    RELIGION = "religion"
+    POLITICS_GOVERNMENT = "politics_government"
+    LAW_CRIME = "law_crime"
+    COMMERCE_MONEY = "commerce_money"
+    WORK_PROFESSION = "work_profession"
+    ARTS_LETTERS = "arts_letters"
+    SCIENCE_LEARNING = "science_learning"
+    MEDICINE_HEALTH = "medicine_health"
+    MILITARY = "military"
+    SUPERNATURAL_BELIEF = "supernatural_belief"
+    OTHER = "other"
+
+
 class TextSpan(BaseModel):
     line_start: int
     line_end: int
@@ -93,6 +126,22 @@ class NarrativeSegment(BaseModel):
 
 class SegmentationResult(BaseModel):
     segments: list[NarrativeSegment]
+
+
+# Stage 1b: Target inventory (one call per story)
+
+class TargetEntry(BaseModel):
+    target_id: str                      # "T-01"
+    label: str                          # canonical name used everywhere else
+    aliases: list[str]                  # other names the text uses for it
+    kind: TargetKind
+    social_class: SocialClass
+    sphere: SocialSphere
+    description: str
+
+
+class TargetInventory(BaseModel):
+    targets: list[TargetEntry]
 
 
 # Stage 2: Detection
@@ -140,8 +189,9 @@ class KRAnnotation(BaseModel):
     script_opposition: ScriptOpposition
 
     situation: str
-    target: Optional[str]
     orientation: Orientation
+    target_id: Optional[str]            # inventory entry, or null for a new / no target
+    target: Optional[str]
     narrative_strategy: NarrativeStrategy
     narrative_strategy_note: Optional[str]
     language: LanguageKR
@@ -158,9 +208,238 @@ class AnnotatedLine(BaseModel):
     setup: Optional[str] = None
     brief_reason: Optional[str] = None
     annotation: KRAnnotation
+    # Set by normalize.py after annotation; reviewers can override them in
+    # the workbook's Canonical Target / Canonical Situation columns.
+    canonical_target: Optional[str] = None
+    canonical_target_id: Optional[str] = None
+    canonical_situation: Optional[str] = None
 
 
 class Analysis(BaseModel):
     source_filename: str
     segments: list[NarrativeSegment]
     lines: list[AnnotatedLine]
+    target_inventory: list[TargetEntry] = []
+    normalization_method: Optional[str] = None
+
+
+# Stage 4: Text-level analysis (textlevel.py, then one interpretive call)
+#
+# The metrics models are written by code, not by the model, so they may
+# have defaults. They are the per-story record that a later corpus stage
+# (stacks, baselines) reads, so keys are stable and every threshold used
+# is stored with the results.
+
+class SectionStat(BaseModel):
+    index: int                          # 1-based
+    word_start: int                     # inclusive
+    word_end: int                       # exclusive
+    n_lines: int
+    line_ids: list[str]
+    words_per_line: Optional[float]     # None when the section has no lines
+
+
+class DistributionTest(BaseModel):
+    null_hypothesis: Literal["random", "uniform"]
+    statistic_name: str
+    statistic: Optional[float]
+    expected_under_null: Optional[float]
+    p_value_greater: Optional[float]    # observed at least this large by chance
+    p_value_less: Optional[float]       # observed at most this large by chance
+    n_simulations: int
+    conclusion: str
+
+
+class Stretch(BaseModel):
+    stretch_id: str                     # "W-1" (wave) or "R-1" (serious relief)
+    kind: Literal["wave", "serious_relief"]
+    first_section: int
+    last_section: int
+    word_start: int
+    word_end: int
+    n_lines: int
+    words_per_line: Optional[float]
+
+
+class Distribution(BaseModel):
+    n_words: int
+    n_lines: int
+    n_sections: int
+    words_per_line: Optional[float]
+    sections: list[SectionStat]
+    tests: list[DistributionTest]
+    waves: list[Stretch]
+    serious_reliefs: list[Stretch]
+
+
+class StrandFeature(BaseModel):
+    feature: str
+    value: str
+
+
+class Strand(BaseModel):
+    strand_id: str                      # "S-001", by size within the story
+    key: str                            # "feature=value[+feature=value]", stable across stories
+    features: list[StrandFeature]
+    line_ids: list[str]
+    n_lines: int
+    share: float                        # of all humorous lines in the story
+    first_position: float               # fraction of text length
+    last_position: float
+    span_fraction: float
+    centrality: Literal["central", "intermediate", "peripheral"]
+    # Other keys with exactly the same lines (one strand, several descriptions)
+    equivalent_keys: list[str] = []
+    comb_ids: list[str] = []
+    bridge_ids: list[str] = []
+
+
+class Comb(BaseModel):
+    comb_id: str
+    strand_id: str
+    line_ids: list[str]
+    word_start: int
+    word_end: int
+    span_fraction: float
+    words_per_line: Optional[float]
+
+
+class Bridge(BaseModel):
+    bridge_id: str
+    strand_id: str
+    from_line_id: str
+    to_line_id: str
+    gap_words: int
+    gap_fraction: float
+
+
+class JabPunchCount(BaseModel):
+    group: str                          # segment id or narrative level
+    label: str
+    n_lines: int
+    n_jab: int
+    n_punch: int
+    words: Optional[int] = None
+    words_per_line: Optional[float] = None
+
+
+class JabPunchSummary(BaseModel):
+    n_jab: int
+    n_punch: int
+    by_segment: list[JabPunchCount]
+    by_level: list[JabPunchCount]
+    punch_line_ids: list[str]
+
+
+class PlotIndicators(BaseModel):
+    final_punch_line_ids: list[str]     # punch lines ending in the last stretch of text
+    n_metanarrative_lines: int          # narrator asides or lines in framing levels
+    metanarrative_share: float
+    n_framing_segments: int             # level_+1 / level_+2 segments
+
+
+class LineFeatures(BaseModel):
+    line_id: str
+    segment_id: str
+    classification: str
+    narrative_level: str
+    word_start: int
+    word_end: int
+    position: float                     # midpoint, fraction of text length
+    section: int
+    features: dict[str, Optional[str]]  # strand feature -> value used
+
+
+class TextLevelMetrics(BaseModel):
+    schema_version: str
+    story_id: str
+    source_filename: str
+    analysis_sha256: str
+    story_sha256: str
+    params: dict
+    reviewer_overrides: int             # canonical values taken from the workbook
+    lines: list[LineFeatures]
+    distribution: Distribution
+    strands: list[Strand]
+    combs: list[Comb]
+    bridges: list[Bridge]
+    jab_punch: JabPunchSummary
+    plot_indicators: PlotIndicators
+
+
+# Stage 4b: interpretive call (LLM-facing: no defaults, closed enums)
+
+class HumorousPlotType(str, Enum):
+    SERIOUS_PLOT_WITH_JAB_LINES = "serious_plot_with_jab_lines"
+    HUMOROUS_PLOT_WITH_PUNCH_LINE = "humorous_plot_with_punch_line"
+    HUMOROUS_PLOT_WITH_METANARRATIVE_DISRUPTION = "humorous_plot_with_metanarrative_disruption"
+    HUMOROUS_PLOT_WITH_HUMOROUS_CENTRAL_COMPLICATION = "humorous_plot_with_humorous_central_complication"
+
+
+class EvidenceKind(str, Enum):
+    STRAND = "strand"
+    COMB = "comb"
+    BRIDGE = "bridge"
+    WAVE = "wave"
+    SERIOUS_RELIEF = "serious_relief"
+    DISTRIBUTION_TEST = "distribution_test"
+    SEGMENT = "segment"
+    JAB_PUNCH = "jab_punch"
+    PLOT_INDICATOR = "plot_indicator"
+
+
+class Confidence(str, Enum):
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+
+class ComplicationHumor(str, Enum):
+    HUMOROUS = "humorous"
+    NOT_HUMOROUS = "not_humorous"
+    UNCLEAR = "unclear"
+
+
+class EvidenceRef(BaseModel):
+    kind: EvidenceKind
+    ref_id: str                         # "S-003", "W-1", "NS-02", "random", ...
+    figure: str                         # the count or statistic relied on
+
+
+class PatternFinding(BaseModel):
+    finding_id: str                     # "F-1"
+    statement: str
+    evidence: list[EvidenceRef]
+
+
+class Reading(BaseModel):
+    reading: str
+    based_on: list[str]                 # finding_ids
+    caveat: str
+
+
+class CentralComplication(BaseModel):
+    description: str
+    segment_ids: list[str]
+    humor_status: ComplicationHumor
+    evidence: list[EvidenceRef]
+    caveat: str
+
+
+class PlotInterpretation(BaseModel):
+    reasoning: str
+    plot_type: HumorousPlotType
+    plot_type_confidence: Confidence
+    runner_up_plot_type: Optional[HumorousPlotType]
+    plot_type_rationale: str
+    plot_type_evidence: list[EvidenceRef]
+    central_complication: CentralComplication
+    pattern_findings: list[PatternFinding]
+    readings: list[Reading]
+
+
+class TextLevelReport(BaseModel):
+    metrics: TextLevelMetrics
+    interpretation: Optional[PlotInterpretation] = None
+    interpretation_model: Optional[str] = None
+    citation_warnings: list[str] = []
