@@ -451,6 +451,7 @@ gtvh-analyzer/
 ├── cli.py                    # entry point
 ├── make_report.py            # builds a reviewable .xlsx (no OpenAI dependency)
 ├── make_reader.py            # builds a readable HTML view of a story (no OpenAI dependency)
+├── figures/                  # publication figures (TikZ): method overview, text vector
 ├── THEORY.md                 # theoretical grounding & design decisions
 ├── requirements.txt
 └── .env.example
@@ -549,7 +550,7 @@ Corrected Canonical Target and Canonical Situation values from the story's workb
   them without changes.
 - The text-level thresholds are documented defaults, not values from
   the theory. Calibrate them on stories you have reviewed.
-- Tests (deterministic code and the Claude client, no API key needed):
+- Tests for the Claude client (no API key needed):
   `python -m unittest discover tests`.
 
 ## References
