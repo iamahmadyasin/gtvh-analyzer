@@ -11,9 +11,9 @@ import asyncio
 import sys
 from pathlib import Path
 
-from batch import BatchLLMClient
-from llm import LLMClient, Usage
+from llm_base import BaseLLMClient, Usage
 from normalize import NormalizationParams
+from providers import add_provider_args, make_client, resolve_provider
 from pipeline import analyze
 
 
@@ -26,7 +26,7 @@ CHECKPOINT_DIR = OUTPUT_DIR / ".checkpoints"
 async def analyze_one(
     input_path: Path,
     output_path: Path,
-    llm: LLMClient,
+    llm: BaseLLMClient,
     detect_concurrency: int,
     annotate_concurrency: int,
     context: str,
@@ -82,13 +82,14 @@ async def _main() -> None:
     parser.add_argument(
         "--model",
         required=True,
-        help="OpenAI model id, e.g. gpt-5.6-luna.",
+        help="Model id: an OpenAI model (e.g. gpt-5.6-luna) or a Claude model "
+             "(e.g. claude-opus-5-5).",
     )
     parser.add_argument(
         "--no-temperature",
         action="store_true",
-        help="Omit the temperature parameter. Needed for some reasoning models "
-             "that reject it.",
+        help="OpenAI only: omit the temperature parameter. Needed for models that "
+             "reject it. Claude is never sent a temperature.",
     )
     parser.add_argument(
         "--detect-concurrency",
@@ -133,11 +134,12 @@ async def _main() -> None:
     parser.add_argument(
         "--normalize",
         choices=["embeddings", "string"],
-        default=defaults.method,
+        default=None,
         help="How situation phrases and new targets are grouped into "
-             "canonical labels: OpenAI embeddings (default; falls back to "
-             "string similarity if the call fails) or string similarity "
-             "(no API call).",
+             "canonical labels: OpenAI embeddings (default with OpenAI; falls "
+             "back to string similarity if the call fails) or string "
+             "similarity (no API call; default with Claude, which has no "
+             "embeddings API).",
     )
     parser.add_argument(
         "--embedding-model",
@@ -158,15 +160,16 @@ async def _main() -> None:
         help="Minimum similarity (0-1) for a new target to be merged with an "
              "inventory entry or another new target.",
     )
+    add_provider_args(parser)
     args = parser.parse_args()
 
-    client_cls = BatchLLMClient if args.batch else LLMClient
-    llm = client_cls(
-        model=args.model,
-        temperature=None if args.no_temperature else 0.0,
-        checkpoint_dir=CHECKPOINT_DIR,
-        fresh=args.fresh,
-    )
+    provider = resolve_provider(args)
+    llm = make_client(args, CHECKPOINT_DIR, batch=args.batch,
+                      temperature=None if args.no_temperature else 0.0)
+    if args.normalize is None:
+        args.normalize = "embeddings" if provider == "openai" else "string"
+    print(f"Provider: {provider}, model {args.model}"
+          + (f", effort {args.effort}" if provider == "claude" else ""))
     run_opts = (
         args.detect_concurrency,
         args.annotate_concurrency,
