@@ -45,8 +45,8 @@ def make_client(args: argparse.Namespace, checkpoint_dir: Path, *, batch: bool =
         return cls(model=args.model, effort=args.effort, max_tokens=args.claude_max_tokens,
                    fallback=not args.no_fallback, checkpoint_dir=checkpoint_dir, fresh=args.fresh)
     if batch:
-        from batch import BatchLLMClient as cls
+        from batch_openai import BatchLLMClient as cls
     else:
-        from llm import LLMClient as cls
+        from llm_openai import LLMClient as cls
     return cls(model=args.model, temperature=temperature,
                checkpoint_dir=checkpoint_dir, fresh=args.fresh)

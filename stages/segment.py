@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from llm_openai import LLMClient
+from llm_base import BaseLLMClient
 from promptlib import load_prompt
 from schemas import NarrativeSegment, SegmentationResult
 
 
 async def segment_narrative(
     story_text_numbered: str,
-    llm: LLMClient,
+    llm: BaseLLMClient,
 ) -> list[NarrativeSegment]:
     prompt = load_prompt("segment")
     result = await llm.call_structured(

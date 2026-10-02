@@ -431,14 +431,13 @@ gtvh-analyzer/
 │   ├── detect.py
 │   ├── annotate.py
 │   └── interpret.py
-├── tests/                    # python -m unittest discover tests
 ├── schemas.py                # Pydantic schemas
 ├── textutils.py              # shared text helpers (no LLM dependency)
 ├── llm_base.py               # shared by both providers: checkpoints, usage, concurrency
-├── llm.py                    # OpenAI client
+├── llm_openai.py             # OpenAI client
 ├── llm_claude.py             # Claude client
 ├── batch_base.py             # shared batch queue and resume logic (--batch)
-├── batch.py                  # OpenAI Batch API client
+├── batch_openai.py           # OpenAI Batch API client
 ├── batch_claude.py           # Claude Message Batches client
 ├── providers.py              # picks the provider from --model / --provider
 ├── promptlib.py              # loads and checks prompts/*.yaml
@@ -450,7 +449,6 @@ gtvh-analyzer/
 ├── cli.py                    # entry point
 ├── make_report.py            # builds a reviewable .xlsx (no OpenAI dependency)
 ├── make_reader.py            # builds a readable HTML view of a story (no OpenAI dependency)
-├── figures/                  # publication figures (TikZ): method overview, text vector
 ├── THEORY.md                 # theoretical grounding & design decisions
 ├── requirements.txt
 └── .env.example
@@ -549,8 +547,6 @@ Corrected Canonical Target and Canonical Situation values from the story's workb
   them without changes.
 - The text-level thresholds are documented defaults, not values from
   the theory. Calibrate them on stories you have reviewed.
-- Tests for the Claude client (no API key needed):
-  `python -m unittest discover tests`.
 
 ## References
 

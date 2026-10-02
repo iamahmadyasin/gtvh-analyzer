@@ -14,7 +14,7 @@ from openai.lib._parsing._completions import type_to_response_format_param
 from pydantic import BaseModel
 
 from batch_base import BatchQueueMixin
-from llm import LLMClient
+from llm_openai import LLMClient
 
 ENDPOINT = "/v1/chat/completions"
 TERMINAL = {"completed", "failed", "expired", "cancelled"}

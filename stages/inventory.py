@@ -9,12 +9,12 @@ not only from identical targets.
 
 from __future__ import annotations
 
-from llm import LLMClient
+from llm_base import BaseLLMClient
 from promptlib import load_prompt
 from schemas import TargetEntry, TargetInventory
 
 
-async def build_inventory(story_text_numbered: str, llm: LLMClient) -> list[TargetEntry]:
+async def build_inventory(story_text_numbered: str, llm: BaseLLMClient) -> list[TargetEntry]:
     prompt = load_prompt("target_inventory")
     result = await llm.call_structured(
         system_prompt=prompt.system,

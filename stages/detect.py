@@ -14,7 +14,7 @@ twice: once with the parent and once on their own.
 
 from __future__ import annotations
 
-from llm_openai import LLMClient
+from llm_base import BaseLLMClient
 from promptlib import Prompt, load_prompt
 from schemas import DetectedLine, DetectionResult, NarrativeSegment
 
@@ -72,7 +72,7 @@ async def detect_lines_in_segment(
     story_lines: list[str],
     segment: NarrativeSegment,
     owned: list[int],
-    llm: LLMClient,
+    llm: BaseLLMClient,
     full_story: str | None,
 ) -> list[DetectedLine]:
     prompt = load_prompt("detect_lines")
@@ -134,7 +134,7 @@ async def detect_lines_in_segment(
 async def detect_all_lines(
     story_lines: list[str],
     segments: list[NarrativeSegment],
-    llm: LLMClient,
+    llm: BaseLLMClient,
     concurrency: int = 5,
     full_story: str | None = None,
 ) -> list[DetectedLine]:

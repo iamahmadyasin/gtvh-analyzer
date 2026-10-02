@@ -9,7 +9,7 @@ come first and are served from the prompt cache after the first call.
 
 from __future__ import annotations
 
-from llm_openai import LLMClient
+from llm_base import BaseLLMClient
 from promptlib import load_prompt
 from schemas import DetectedLine, KRAnnotation, NarrativeSegment, TargetEntry
 from stages.inventory import format_inventory
@@ -47,7 +47,7 @@ async def annotate_line(
     segment: NarrativeSegment,
     segments: list[NarrativeSegment],
     story_lines: list[str],
-    llm: LLMClient,
+    llm: BaseLLMClient,
     full_story: str | None,
     inventory: list[TargetEntry],
 ) -> KRAnnotation:
@@ -97,7 +97,7 @@ async def annotate_all_lines(
     lines: list[DetectedLine],
     segments: list[NarrativeSegment],
     story_lines: list[str],
-    llm: LLMClient,
+    llm: BaseLLMClient,
     concurrency: int = 10,
     full_story: str | None = None,
     inventory: list[TargetEntry] | None = None,

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 
-from llm_openai import LLMClient
+from llm_base import BaseLLMClient
 from normalize import NormalizationParams, normalize_analysis
 from schemas import (
     AnnotatedLine,
@@ -55,7 +55,7 @@ def assemble(
 async def analyze(
     story_text: str,
     filename: str,
-    llm: LLMClient,
+    llm: BaseLLMClient,
     detect_concurrency: int = 5,
     annotate_concurrency: int = 10,
     context: str = "story",

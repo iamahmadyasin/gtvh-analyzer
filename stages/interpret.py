@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 
-from llm import LLMClient
+from llm_base import BaseLLMClient
 from promptlib import load_prompt
 from schemas import (
     EvidenceKind,
@@ -141,7 +141,7 @@ def check_citations(result: PlotInterpretation, aggregates: dict, metrics: TextL
 async def interpret_story(
     metrics: TextLevelMetrics,
     segments: list[NarrativeSegment],
-    llm: LLMClient,
+    llm: BaseLLMClient,
     max_strands: int = 20,
 ) -> tuple[PlotInterpretation, list[str]]:
     prompt = load_prompt("interpret_plot")
