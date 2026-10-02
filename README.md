@@ -8,7 +8,7 @@ that make it funny.
 
 No model training. No symbolic parsing. Just carefully staged LLM
 calls with a Pydantic schema as the contract between stages, built to
-be legible and editable rather than clever.
+be legible and editable.
 
 
 ## Why this exists
@@ -17,7 +17,7 @@ Raskin's Semantic Script Theory of Humor (1985) and Attardo's General Theory of 
 
 See [`THEORY.md`](./THEORY.md) for the full account of which parts of the theory are implemented and which are deliberately deferred.
 
-## How it works
+## Pipeline Diagram
 
 Four steps. The first and third call the model; everything else is plain
 code. Each model call has its own prompt file you can edit without touching
@@ -152,7 +152,6 @@ cp .env.example .env             # Windows: copy .env.example .env
 python cli.py --model gpt-5.6-luna --no-temperature   # writes output/<story>.json
 python make_report.py                                 # writes output/<story>.xlsx
 
-# optional: correct Canonical Target / Canonical Situation in the workbook, save, then
 python analyze_text.py --model gpt-5.6-luna           # writes output/text_level/<story>.json
 python make_report.py                                 # adds Strands, Distribution, Plot sheets
 python make_reader.py                                 # writes output/<story>.html, a readable view

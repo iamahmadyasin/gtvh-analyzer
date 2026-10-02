@@ -1,21 +1,5 @@
 """
 Readable story view: one self-contained HTML file per story.
-
-    python make_reader.py                       # every output/*.json
-    python make_reader.py --json output/story.json --title "The Vicar's Bicycle"
-
-The story appears as continuous text with every humorous line marked.
-Hover a mark for a one-line summary; click it for a plain-English card
-(what clashes, who is the butt, how it is told) with the technical tags
-underneath. If the text-level stage has been run, the page also shows a
-summary of the whole story, a humor-density strip, and filters for the
-main strands. A "Margin notes" view puts a short note beside each joke,
-and is what the browser prints.
-
-No API calls and no OpenAI dependency. Reviewer corrections to Canonical
-Target / Canonical Situation in the story's workbook are used if present.
-Opens offline in any browser; fonts fall back to system fonts without a
-connection.
 """
 
 from __future__ import annotations
@@ -35,8 +19,6 @@ ROOT = Path(__file__).parent
 INPUT_DIR = ROOT / "input"
 OUTPUT_DIR = ROOT / "output"
 TEXT_LEVEL_DIR = OUTPUT_DIR / "text_level"
-
-# ---------- plain-English wording for the technical tags ----------
 
 BINARY = {
     "good_bad": "good and bad", "life_death": "life and death",
@@ -443,11 +425,11 @@ CSS = r"""
    story at reading width, and a sticky explanation panel. Margin-notes view
    and print put a short note beside each paragraph instead. */
 :root {
-  --paper: #ffffff; --sheet: #f5f4f1; --ink: #151514; --muted: #67635c; --rule: #e2e0db;
-  --accent: #151514; --accent-soft: #ecebe7;
-  --jab: rgba(255, 213, 0, .40); --jab-line: #9a7400;
-  --punch: rgba(255, 64, 160, .20); --punch-line: #b0186e;
-  --heat: #151514; --relief: #9b978f;
+  --paper:
+  --accent:
+  --jab: rgba(255, 213, 0, .40); --jab-line:
+  --punch: rgba(255, 64, 160, .20); --punch-line:
+  --heat:
   --dim: .28;
   --font-story: "Literata", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --font-ui: "Instrument Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -455,17 +437,17 @@ CSS = r"""
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --paper: #151514; --sheet: #1e1e1c; --ink: #ecebe6; --muted: #a39f96; --rule: #31302d;
-  --accent: #ecebe6; --accent-soft: #2b2a27;
-  --jab: rgba(255, 213, 0, .22); --jab-line: #e5c23a;
-  --punch: rgba(255, 92, 175, .22); --punch-line: #ff8fc9;
-  --heat: #ecebe6; --relief: #77736b; color-scheme: dark; } }
+  --paper:
+  --accent:
+  --jab: rgba(255, 213, 0, .22); --jab-line:
+  --punch: rgba(255, 92, 175, .22); --punch-line:
+  --heat:
 :root[data-theme="dark"] {
-  --paper: #151514; --sheet: #1e1e1c; --ink: #ecebe6; --muted: #a39f96; --rule: #31302d;
-  --accent: #ecebe6; --accent-soft: #2b2a27;
-  --jab: rgba(255, 213, 0, .22); --jab-line: #e5c23a;
-  --punch: rgba(255, 92, 175, .22); --punch-line: #ff8fc9;
-  --heat: #ecebe6; --relief: #77736b; color-scheme: dark; }
+  --paper:
+  --accent:
+  --jab: rgba(255, 213, 0, .22); --jab-line:
+  --punch: rgba(255, 92, 175, .22); --punch-line:
+  --heat:
 
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--paper); color: var(--ink); font: 400 var(--step-0)/1.5 var(--font-ui); }

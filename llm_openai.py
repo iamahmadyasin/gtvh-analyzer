@@ -1,30 +1,5 @@
 """
 OpenAI client: a thin async wrapper around OpenAI's structured-output API.
-
-The Claude client is llm_claude.py; what both share (checkpoints, usage,
-run_all) is in llm_base.py. Everything downstream depends only on
-`call_structured(...) -> PydanticModel`.
-
-Uses `client.chat.completions.parse()` — the stable structured-outputs
-path. (This method used to live under `client.beta.*`; it has since
-graduated out of beta.)
-
-Handles rate limits (HTTP 429) with automatic retry and exponential
-backoff, honoring the `retry-after` header when the API supplies one.
-
-Two ways of not paying twice:
-
-- Prompt caching (provider side). OpenAI automatically bills a repeated
-  prompt prefix of 1024+ tokens at the cached-input rate. Stages put
-  everything shared between calls (system prompt, then the full story)
-  first and the call-specific part last, and every call is tagged with a
-  `prompt_cache_key` derived from that shared prefix so the requests are
-  routed to the same cache.
-- Checkpoints (local). Each successful response is saved under
-  `checkpoint_dir`, keyed by a hash of everything that determines it
-  (model, temperature, messages, response schema). Re-running after a
-  crash, or after editing only a later stage's prompt, reuses every call
-  whose inputs are unchanged.
 """
 
 from __future__ import annotations
@@ -40,7 +15,7 @@ from openai import AsyncOpenAI, APIConnectionError, APIStatusError, RateLimitErr
 
 from llm_base import BaseLLMClient, R, T, Usage, _sha256, run_all
 
-# Re-exported: other modules import these from here.
+
 __all__ = ["LLMClient", "Usage", "run_all", "R", "T"]
 
 

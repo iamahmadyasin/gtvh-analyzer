@@ -3,8 +3,7 @@
 Input is the text-level aggregates computed by textlevel.py plus the
 segment descriptions, never the per-line annotations. Output assigns one
 of Attardo's four humorous plot types, identifies the central
-complication, and separates pattern findings (what the aggregates show,
-with the figures cited) from readings layered on top of them.
+complication, and separates pattern findings from readings layered on top of them.
 
 After the call, every cited id is checked against the aggregates; ids the
 model invented are reported as citation warnings rather than silently kept.
@@ -25,8 +24,6 @@ from schemas import (
 
 
 def _indicators(metrics: TextLevelMetrics) -> dict:
-    """Plot indicators as counts and positions; no line ids, since the call
-    sees aggregates only."""
     pi = metrics.plot_indicators
     position = {lf.line_id: lf.position for lf in metrics.lines}
     return {

@@ -1,12 +1,5 @@
 """
-Claude Message Batches client (--batch with a Claude model): half the
-standard price, results within 24 hours. How batch mode works, and how
-interrupted batches resume: batch_base.py.
-
-Each request carries the same system prompt, cache breakpoints, effort and
-JSON-schema output format as an online Claude call. Server-side refusal
-fallback is not available on the Batches API, so a declined request comes
-back as an error for that request only; re-running online retries it.
+Claude Message Batches client: half the standard price, results within 24 hours.
 """
 
 from __future__ import annotations

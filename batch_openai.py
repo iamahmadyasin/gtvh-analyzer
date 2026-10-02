@@ -1,4 +1,6 @@
-"""OpenAI Batch API client (--batch). How batch mode works: batch_base.py."""
+"""
+OpenAI Batch API client: half the standard price, results within 24 hours. 
+"""
 
 from __future__ import annotations
 

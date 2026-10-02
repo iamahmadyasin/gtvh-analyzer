@@ -1,21 +1,6 @@
 """
 Provider-neutral parts of the model clients.
-
-Every stage depends only on `call_structured(system_prompt, user_message,
-response_model) -> PydanticModel`, `map(...)`, and `embed(...)`. The
-provider clients (llm.py for OpenAI, llm_claude.py for Claude) subclass
-BaseLLMClient and implement the actual API calls; this module holds what
-they share:
-
-- Checkpoints. Each successful response is saved under `checkpoint_dir`,
-  keyed by a hash of everything that determines it (model, settings,
-  messages, response schema). Re-running after a crash, or after editing
-  only a later stage's prompt, reuses every call whose inputs are
-  unchanged.
-- Usage counting, printed at the end of each run.
-- run_all: one stage's calls with a concurrency cap, a warm-up call so the
-  provider's prompt cache is filled before the rest start, and failures
-  collected so every success is checkpointed before an error is raised.
+The provider clients subclass implement the actual API calls.
 """
 
 from __future__ import annotations

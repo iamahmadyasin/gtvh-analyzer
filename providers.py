@@ -1,9 +1,5 @@
 """
 Choosing the model provider for a run.
-
-`--provider auto` (the default) picks Claude for model names starting with
-"claude-" and OpenAI otherwise. The command-line options for both
-providers are defined here so cli.py and analyze_text.py stay in step.
 """
 
 from __future__ import annotations
@@ -41,8 +37,6 @@ def resolve_provider(args: argparse.Namespace) -> str:
 
 def make_client(args: argparse.Namespace, checkpoint_dir: Path, *, batch: bool = False,
                 temperature: float | None = None):
-    """The client for this run: online or batch, OpenAI or Claude.
-    SDKs are imported only for the provider in use."""
     if resolve_provider(args) == "claude":
         if batch:
             from batch_claude import ClaudeBatchClient as cls

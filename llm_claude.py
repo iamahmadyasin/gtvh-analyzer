@@ -1,30 +1,5 @@
 """
-Claude client: the same `call_structured(...) -> PydanticModel` contract as
-the OpenAI client (llm.py), on the Anthropic Messages API.
-
-- Structured outputs: `client.beta.messages.parse(output_format=Model)`
-  constrains the response to the stage's Pydantic schema and returns it
-  validated as `parsed_output`.
-- Prompt caching: the system prompt and the parts of the user message that
-  every call in a stage shares (the full story, the target inventory) carry
-  `cache_control` breakpoints, so after the first call they are billed at
-  the cache-read rate. The call-specific part comes last, uncached.
-- Thinking and effort: current Claude models think adaptively by default
-  (on Claude Opus 5.5 thinking cannot be turned off). Depth is set with
-  `output_config.effort`; the default here is "high" because annotation is
-  judgement-heavy, and Claude Opus 5.5's own default is "medium".
-- No temperature: current Claude models reject sampling parameters.
-- Refusals: a declined request (`stop_reason == "refusal"`) raises instead
-  of returning a half-filled object. On models that support it, requests
-  opt into server-side fallback (`fallbacks: "default"`), which re-runs a
-  declined request on the model Anthropic recommends for that category.
-- Retries: the SDK retries rate limits (429), overload and server errors
-  with backoff; `max_retries` is raised for low tokens-per-minute accounts.
-- No embeddings API: `embed` raises, and normalization falls back to string
-  similarity.
-
-Credentials come from the environment (ANTHROPIC_API_KEY, or an
-`ant auth login` profile).
+Claude client: a thin async wrapper around OpenAI's structured-output API
 """
 
 from __future__ import annotations

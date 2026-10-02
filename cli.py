@@ -1,7 +1,6 @@
 """
 CLI entry point.
 Default behavior: analyze every .txt in ./input, write .json into ./output.
-With --file <path>: analyze one file, write beside it (or to --out).
 """
 
 from __future__ import annotations

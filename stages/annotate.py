@@ -9,7 +9,7 @@ come first and are served from the prompt cache after the first call.
 
 from __future__ import annotations
 
-from llm import LLMClient
+from llm_openai import LLMClient
 from promptlib import load_prompt
 from schemas import DetectedLine, KRAnnotation, NarrativeSegment, TargetEntry
 from stages.inventory import format_inventory

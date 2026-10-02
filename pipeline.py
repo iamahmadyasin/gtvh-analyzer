@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 
-from llm import LLMClient
+from llm_openai import LLMClient
 from normalize import NormalizationParams, normalize_analysis
 from schemas import (
     AnnotatedLine,

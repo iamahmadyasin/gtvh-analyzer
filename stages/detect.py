@@ -14,7 +14,7 @@ twice: once with the parent and once on their own.
 
 from __future__ import annotations
 
-from llm import LLMClient
+from llm_openai import LLMClient
 from promptlib import Prompt, load_prompt
 from schemas import DetectedLine, DetectionResult, NarrativeSegment
 

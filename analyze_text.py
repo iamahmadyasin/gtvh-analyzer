@@ -1,17 +1,9 @@
 """
-Text-level stage, run on saved analyses (no need to re-run the per-line
-pipeline).
+Text-level stage, run on saved analyses
 
-    python analyze_text.py --model gpt-5.6-luna            # every output/*.json
-    python analyze_text.py --json output/story.json --no-interpret
-
-For each analysis it computes the deterministic metrics (textlevel.py),
-then, unless --no-interpret, makes one interpretive call per story
-(stages/interpret.py). Results go to output/text_level/<story>.json, which
-make_report.py turns into the Strands, Distribution and Plot sheets.
-
-If the story's report workbook exists (output/<story>.xlsx), corrected
-Canonical Target / Canonical Situation values in it are used.
+For each analysis it computes the deterministic metrics,
+then, unless --no-interpret, makes one interpretive call per story. 
+Results turn into the Strands, Distribution and Plot sheets.
 """
 
 from __future__ import annotations

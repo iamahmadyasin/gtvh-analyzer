@@ -50,7 +50,6 @@ def _check_enums(name: str, system: str, enum_names: list[str]) -> None:
 
 
 def load_prompt(name: str) -> Prompt:
-    """Load prompts/<name>.yaml. `name` is the stem (no extension)."""
     path = PROMPTS_DIR / f"{name}.yaml"
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     if not isinstance(data, dict) or not isinstance(data.get("system"), str):

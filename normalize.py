@@ -1,27 +1,5 @@
 """
 Canonical target and situation labels for one story.
-
-Strands connect lines that share a KR value, so the same butt or frame has
-to carry the same label on every line. The annotation prompt already asks
-the model to reuse inventory targets and situation wording; this module
-cleans up what still varies:
-
-- Targets: a line whose `target_id` names an inventory entry gets that
-  entry's label. A new (non-inventory) target is matched to an inventory
-  entry by label or alias when one is close enough, and otherwise grouped
-  with the story's other new targets.
-- Situations: the story's distinct situation phrases are grouped, and each
-  group takes its most frequent phrase as the canonical label. The sentinel
-  values `cotext` and `irr` are never merged with anything.
-
-Similarity is either cosine similarity of embeddings (the caller passes an
-`embed` function, so this module has no API dependency of its own) or, as
-the no-API fallback, a string similarity. Grouping is greedy against each
-group's representative rather than single-linkage, so "dinner party" and
-"garden party" can't be chained together through a third phrase.
-
-Every threshold is a named parameter; the defaults are starting points to
-calibrate, and reviewers can correct the result in the workbook.
 """
 
 from __future__ import annotations
@@ -45,14 +23,12 @@ Similarity = Callable[[str, str], float]
 
 @dataclass(frozen=True)
 class NormalizationParams:
-    method: str = "embeddings"          # "embeddings" or "string"
-    situation_threshold: float = 0.80   # min similarity to merge two situations
-    target_threshold: float = 0.80      # min similarity to merge two targets
+    method: str = "embeddings"
+    situation_threshold: float = 0.80
+    target_threshold: float = 0.80
 
 
 def clean_label(label: str) -> str:
-    """Drop the `(?)` uncertainty marker and normalize spacing; the marker
-    records the annotator's doubt, not a different value."""
     return " ".join(_UNCERTAIN.sub("", label).split()).strip(" .,;:")
 
 
@@ -66,8 +42,6 @@ def _tokens(label: str) -> set[str]:
 
 
 def string_similarity(a: str, b: str) -> float:
-    """The larger of character-sequence similarity and content-word
-    overlap, so both "news room"/"newsroom" and word-order variants match."""
     ka, kb = label_key(a), label_key(b)
     if ka == kb:
         return 1.0
@@ -87,8 +61,6 @@ def _cosine(u: Sequence[float], v: Sequence[float]) -> float:
 async def make_similarity(
     labels: Sequence[str], method: str, embed: Optional[Embed]
 ) -> tuple[Similarity, str]:
-    """A similarity function over `labels` and the method actually used
-    (falls back to string similarity if embeddings are unavailable)."""
     if method == "embeddings" and embed is not None and labels:
         keys = sorted({label_key(lb) for lb in labels})
         try:
@@ -112,14 +84,6 @@ def group_labels(
     similarity: Similarity,
     threshold: float,
 ) -> dict[str, str]:
-    """Map each cleaned label to its group's canonical label.
-
-    Labels are visited most frequent first (ties: shorter, then
-    alphabetical); each joins the most similar existing group if that
-    group's representative is at least `threshold` similar, otherwise it
-    starts a new group. A group's representative, and canonical label, is
-    its first (most frequent) member.
-    """
     order = sorted(counts, key=lambda lb: (-counts[lb], len(lb), lb))
     representatives: list[str] = []
     mapping: dict[str, str] = {}
@@ -197,7 +161,6 @@ def _apply(analysis: Analysis, params: NormalizationParams, similarity: Similari
 
     situation_map = group_labels(situations, similarity, params.situation_threshold)
 
-    # New targets: an inventory entry if one is close enough, else grouped.
     to_entry: dict[str, TargetEntry] = {}
     unmatched: Counter = Counter()
     for label in new_targets:

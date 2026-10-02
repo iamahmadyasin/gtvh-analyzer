@@ -76,7 +76,6 @@ def build_report(
             return ""
         return min(containing, key=lambda s: s.line_end - s.line_start).label
 
-    # Map each global line number -> list of annotation line_ids touching it
     line_to_annotation_ids: dict[int, list[str]] = {i: [] for i in range(1, n_lines + 1)}
     for al in analysis.lines:
         for ln in range(al.span.line_start, al.span.line_end + 1):
@@ -87,7 +86,6 @@ def build_report(
 
     wb = Workbook()
 
-    # Story sheet
     story_ws = wb.active
     story_ws.title = "Story"
     story_headers = ["Line #", "Segment", "Text", "Annotation(s)"]
@@ -206,7 +204,6 @@ def build_report(
             cell = ann_ws.cell(row=row, column=col[h], value=v)
             cell.alignment = WRAP if col[h] in wrap_cols else TOP
 
-        # Hyperlink back to the first line of the story span
         ctx_cell = ann_ws.cell(row=row, column=col["Context ▶"], value="\u25b6 view in story")
         ctx_cell.hyperlink = Hyperlink(ref=ctx_cell.coordinate, location=f"Story!A{al.span.line_start + 1}")
         ctx_cell.font = HYPERLINK_FONT
@@ -214,21 +211,17 @@ def build_report(
     _autofit(ann_ws, {i + 1: w for i, (_, w) in enumerate(ann_columns)})
     ann_ws.auto_filter.ref = f"A1:{get_column_letter(len(ann_headers))}{len(analysis.lines) + 1}"
 
-    # Reviewer Verdict dropdown
     verdict_col = get_column_letter(col["Reviewer Verdict"])
     dv = DataValidation(type="list", formula1='"Agree,Disagree,Partial,Unsure"', allow_blank=True)
     ann_ws.add_data_validation(dv)
     dv.add(f"{verdict_col}2:{verdict_col}{len(analysis.lines) + 1}")
 
-    # What the pipeline wrote into the canonical columns, so a later run can
-    # tell a reviewer's edit from an untouched cell (see review_workbook.py).
     gen_ws = wb.create_sheet(GENERATED_SHEET)
     gen_ws.append(["Line ID", "Humorous Text", *CANONICAL_COLUMNS])
     for record in generated_rows:
         gen_ws.append(list(record))
     gen_ws.sheet_state = "hidden"
 
-    # Segments sheet
     seg_ws = wb.create_sheet("Segments")
     seg_headers = ["Segment ID", "Label", "Narrative Level", "Line Range",
                    "Parent", "Terminal?", "Cue", "Description"]
@@ -253,7 +246,7 @@ def build_report(
         if text_level.interpretation is not None:
             _plot_sheet(wb, text_level)
 
-    wb.move_sheet(GENERATED_SHEET, offset=len(wb.sheetnames))  # hidden helper goes last
+    wb.move_sheet(GENERATED_SHEET, offset=len(wb.sheetnames))
 
     # Apply the base font everywhere
     for ws in wb.worksheets:
@@ -272,8 +265,6 @@ def build_report(
     return kept_edits
 
 
-# ---------- text-level sheets ----------
-
 def _title(ws, row: int, text: str, note: str = "") -> int:
     ws.cell(row=row, column=1, value=text).font = TITLE_FONT
     if note:
@@ -283,7 +274,6 @@ def _title(ws, row: int, text: str, note: str = "") -> int:
 
 
 def _table(ws, top: int, headers: list[str], rows: list[list], wrap: tuple = ()) -> int:
-    """Write a header row and data rows from `top`; returns the next free row."""
     for c, h in enumerate(headers, start=1):
         ws.cell(row=top, column=c, value=h)
     _style_header_row(ws, top, len(headers))

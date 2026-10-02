@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from llm import LLMClient
+from llm_openai import LLMClient
 from promptlib import load_prompt
 from schemas import NarrativeSegment, SegmentationResult
 

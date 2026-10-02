@@ -3,8 +3,8 @@
 One call per story, before annotation. Lists the characters, groups,
 institutions, and ideas the story is likely to target, each tagged with a
 few attributes, so the annotation stage can reuse one label per butt and
-the text-level stage can build strands from targets that share a feature
-(e.g. every upper-class target), not only from identical targets.
+the text-level stage can build strands from targets that share a feature, 
+not only from identical targets.
 """
 
 from __future__ import annotations
@@ -21,15 +21,12 @@ async def build_inventory(story_text_numbered: str, llm: LLMClient) -> list[Targ
         user_message=prompt.render("task", story=story_text_numbered),
         response_model=TargetInventory,
     )
-    # Ids are what annotations refer to; make them unique and sequential
-    # whatever the model wrote.
     for i, entry in enumerate(result.targets, start=1):
         entry.target_id = f"T-{i:02d}"
     return result.targets
 
 
 def format_inventory(inventory: list[TargetEntry]) -> str:
-    """One line per entry, as shown to the annotation model."""
     if not inventory:
         return "(empty: no likely targets were identified)"
     rows = []

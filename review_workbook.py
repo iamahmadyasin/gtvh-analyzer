@@ -1,22 +1,5 @@
 """
 Reading reviewer input back out of a report workbook.
-
-The Annotations sheet has columns the reviewer fills in or corrects:
-Reviewer Verdict and Reviewer Notes, plus Canonical Target and Canonical
-Situation, which arrive pre-filled with the pipeline's values. A hidden
-`_generated` sheet records what the pipeline wrote into the canonical
-columns, so an edit can be told apart from an untouched cell. That lets
-
-- make_report.py rebuild a workbook without losing anyone's edits, while
-  untouched canonical cells still pick up new pipeline values, and
-- the text-level stage use the reviewer's corrected values where they
-  exist and the pipeline's everywhere else.
-
-A row is matched to a line by Line ID *and* humorous text, so rows from a
-workbook made before the pipeline was re-run (when IDs may point at
-different lines) are ignored rather than misapplied.
-
-openpyxl only: no API dependency.
 """
 
 from __future__ import annotations
@@ -37,19 +20,15 @@ REVIEWER_COLUMNS = ("Reviewer Verdict", "Reviewer Notes")
 class ReviewRow:
     line_id: str
     text: str
-    values: dict[str, Optional[str]] = field(default_factory=dict)     # column -> cell value
-    generated: dict[str, Optional[str]] = field(default_factory=dict)  # column -> value written
+    values: dict[str, Optional[str]] = field(default_factory=dict)
+    generated: dict[str, Optional[str]] = field(default_factory=dict)
 
     def edited_canonical(self) -> dict[str, Optional[str]]:
-        """Canonical columns the reviewer changed: column -> new value, with
-        None for a cell they cleared (meaning: no value)."""
         out = {}
         for col in CANONICAL_COLUMNS:
             if col not in self.values:
                 continue
             value = _clean(self.values[col])
-            # No record of what was generated (older workbook): any value
-            # present is taken as the reviewer's.
             if col not in self.generated:
                 if value is not None:
                     out[col] = value
@@ -66,8 +45,6 @@ def _clean(value) -> Optional[str]:
 
 
 def read_review(path: Path) -> dict[str, ReviewRow]:
-    """Reviewer-facing values from an existing workbook, by Line ID. Empty
-    if the file doesn't exist or has no Annotations sheet."""
     if not path.exists():
         return {}
     wb = load_workbook(path, read_only=True, data_only=True)
@@ -110,7 +87,6 @@ def read_review(path: Path) -> dict[str, ReviewRow]:
 
 
 def matching(review: dict[str, ReviewRow], line_id: str, text: str) -> Optional[ReviewRow]:
-    """The workbook row for this line, if it still describes the same text."""
     row = review.get(line_id)
     if row is None or row.text.strip() != text.strip():
         return None

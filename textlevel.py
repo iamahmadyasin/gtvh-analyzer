@@ -1,27 +1,5 @@
 """
 Stage 4a: text-level analysis of one story (deterministic, no API calls).
-
-Turns a saved analysis JSON into the text-level findings of Attardo's
-expanded GTVH for longer texts (Humorous Texts, 2001; "Cognitive
-stylistics of humorous texts"):
-
-- distribution: the text cut into equal word-count sections, lines per
-  section, words-per-line ratios, tests against random and uniform
-  placement, peaks ("waves") and serious-relief stretches;
-- strands: sets of lines sharing a value on one KR feature or a pair of
-  them, classified central / intermediate / peripheral;
-- combs and bridges within each strand;
-- jab/punch counts by segment and narrative level, plus a few plot
-  indicators for the interpretive call.
-
-Attardo gives no numeric thresholds, so every threshold is a field of
-TextLevelParams with its rationale, and the values used are written into
-the output next to the results.
-
-The output (schemas.TextLevelMetrics) is the per-story record a later
-corpus stage will read for stacks and baselines: strand keys are stable
-"feature=value" strings, per-line features are included, and the analysis
-and story hashes identify exactly what was measured.
 """
 
 from __future__ import annotations
@@ -73,7 +51,6 @@ def _param(default, help: str):
 
 @dataclass(frozen=True)
 class TextLevelParams:
-    # Distribution
     n_sections: int = _param(
         20, "Number of equal word-count sections the text is cut into. Attardo "
             "used 100-word sections for a ~12,800-word story; for short stories "
@@ -123,9 +100,6 @@ class TextLevelParams:
             raise ValueError("peripheral_max_span must not exceed central_min_span")
 
 
-# Strand features and the KR each belongs to. Pairwise strands under
-# 'cross_kr' combine features of different KRs only (target + its own
-# attributes would just restate the target strand).
 FEATURES: dict[str, str] = {
     "target": "TA",
     "target_kind": "TA",
@@ -140,16 +114,12 @@ FEATURES: dict[str, str] = {
     "register_effect": "LA",
 }
 
-# Values that mean "nothing shared" and never form a strand.
 _NO_STRAND_VALUES = {
     "situation": SITUATION_SENTINELS,
     "so_binary_category": {"none"},
     "narrative_strategy": {NarrativeStrategy.OTHER.value},
     "target_social_class": {"unknown", "not_applicable"},
 }
-
-
-# ---------- positions ----------
 
 def _line_word_offsets(story_text: str) -> tuple[list[str], list[int], int]:
     lines = story_text.splitlines()
@@ -161,8 +131,6 @@ def _line_word_offsets(story_text: str) -> tuple[list[str], list[int], int]:
 
 
 def _locate(line: AnnotatedLine, lines: list[str], offsets: list[int], total: int) -> tuple[int, int]:
-    """Word range of a humorous line: the quoted span text found within its
-    story lines, or the whole lines if the quote can't be found."""
     n = len(lines)
     start = min(max(line.span.line_start, 1), n) if n else 1
     end = min(max(line.span.line_end, start), n) if n else 1
@@ -190,9 +158,6 @@ def _section_of(word: float, total: int, k: int) -> int:
         return 0
     return min(int(word * k / total), k - 1)
 
-
-# ---------- distribution ----------
-
 def _chi2_uniform(counts: list[int]) -> Optional[float]:
     n = sum(counts)
     if n == 0:
@@ -210,8 +175,6 @@ def _gap_cv(positions: list[float]) -> Optional[float]:
 
 
 def _monte_carlo(n: int, total: int, k: int, params: TextLevelParams) -> tuple[list[float], list[float]]:
-    """Statistics under random placement: n lines dropped independently
-    and uniformly at random over the text."""
     rng = random.Random(params.seed)
     chi2s, cvs = [], []
     for _ in range(params.n_simulations):
@@ -329,8 +292,6 @@ def _distribution(sections: list[SectionStat], positions: list[float], total: in
         waves=waves, serious_reliefs=reliefs)
 
 
-# ---------- features ----------
-
 def _entry_for(label: Optional[str], inventory: list[TargetEntry]) -> Optional[TargetEntry]:
     if not label:
         return None
@@ -381,8 +342,6 @@ def _pairs(spec: str) -> list[tuple[str, str]]:
     return pairs
 
 
-# ---------- strands, combs, bridges ----------
-
 def _strands(line_feats: list[LineFeatures], total: int, params: TextLevelParams):
     order = {lf.line_id: i for i, lf in enumerate(sorted(line_feats, key=lambda x: x.position))}
     by_id = {lf.line_id: lf for lf in line_feats}
@@ -416,9 +375,6 @@ def _strands(line_feats: list[LineFeatures], total: int, params: TextLevelParams
                               [feature_rank[f] for f, _ in kv[0]],
                               [v for _, v in kv[0]]))
 
-    # Keys selecting exactly the same lines describe one strand: keep the
-    # simplest key and list the others as equivalent, so the same lines
-    # don't produce duplicate strands, combs, and bridges.
     merged: dict[frozenset, tuple] = {}
     equivalents: dict[frozenset, list[str]] = defaultdict(list)
     for key, ids in kept:
@@ -445,7 +401,6 @@ def _strands(line_feats: list[LineFeatures], total: int, params: TextLevelParams
             span_fraction=span, centrality=centrality,
             equivalent_keys=equivalents.get(lines_key, []))
 
-        # Combs: runs of strand lines with every consecutive gap small.
         run = [ids[0]]
         for prev, cur in zip(ids, ids[1:] + [None]):
             close = cur is not None and (by_id[cur].position - by_id[prev].position) <= params.comb_max_gap
@@ -463,7 +418,6 @@ def _strands(line_feats: list[LineFeatures], total: int, params: TextLevelParams
                 strand.comb_ids.append(comb.comb_id)
             run = [cur] if cur is not None else []
 
-        # Bridges: consecutive strand lines far apart.
         for a, b in zip(ids, ids[1:]):
             gap = by_id[b].position - by_id[a].position
             if gap >= params.bridge_min_gap:
@@ -476,8 +430,6 @@ def _strands(line_feats: list[LineFeatures], total: int, params: TextLevelParams
         strands.append(strand)
     return strands, combs, bridges
 
-
-# ---------- jab / punch ----------
 
 def _jab_punch(analysis: Analysis, line_feats: list[LineFeatures], offsets: list[int],
                total: int, params: TextLevelParams) -> tuple[JabPunchSummary, PlotIndicators]:
@@ -525,8 +477,6 @@ def _jab_punch(analysis: Analysis, line_feats: list[LineFeatures], offsets: list
     return summary, indicators
 
 
-# ---------- entry point ----------
-
 def _sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
@@ -538,13 +488,8 @@ def compute_metrics(
     analysis_json: Optional[str] = None,
     review_path: Optional[Path] = None,
 ) -> TextLevelMetrics:
-    """Text-level metrics for one story. `review_path` is the story's report
-    workbook; reviewer-corrected Canonical Target / Canonical Situation
-    values found there replace the pipeline's."""
     notes = {}
     if any(ln.canonical_situation is None for ln in analysis.lines):
-        # Analysis from before normalization existed: normalize now with the
-        # no-API string method so strands still use consistent labels.
         normalize_offline(analysis, NormalizationParams(method="string"))
         notes["normalization"] = "string similarity applied at text-level time"
 
@@ -608,15 +553,12 @@ def compute_metrics(
 
 
 def param_help() -> list[tuple[str, object, str]]:
-    """(name, default, help) for every parameter, for the CLI and docs."""
     return [(f.name, f.default, f.metadata["help"]) for f in fields(TextLevelParams)]
 
 
 def load_analysis(path: Path) -> tuple[Analysis, str]:
     raw = path.read_text(encoding="utf-8")
     data = json.loads(raw)
-    # Analyses written before the reasoning field / fixed narrative
-    # strategies / target ids existed still load.
     strategies = {m.value for m in NarrativeStrategy}
     for line in data.get("lines", []):
         a = line.get("annotation", {})

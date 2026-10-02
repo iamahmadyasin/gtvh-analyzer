@@ -1,24 +1,5 @@
 """
 Batch-mode plumbing shared by the OpenAI and Claude batch clients.
-
-How batch mode fits the pipeline without changing any stage code: every
-story is analyzed at once, and `call_structured` only queues its request
-and waits. Once every story is waiting (no new requests for a moment), the
-whole queue is sent as one batch. So all stories' segmentation and
-inventory calls go in one batch, then all their detection calls, then all
-their annotation calls: one batch per stage, each needing the previous
-one's results.
-
-Results are written to the same checkpoints as online calls, so batch and
-online runs of the same inputs share results. Each submitted batch is
-recorded under `<checkpoint_dir>/batches/` until its results are saved; if
-the process is stopped while waiting, re-running the same command picks
-the batch up again instead of paying for it twice.
-
-A provider's batch client mixes this into its online client and supplies
-`_batch_body` (one request), `_submit` (send a batch, return its id) and
-`_collect` (wait for a batch, checkpoint each success, return raw JSON
-text or an error per request key).
 """
 
 from __future__ import annotations
