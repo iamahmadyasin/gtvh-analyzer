@@ -12,3 +12,7 @@ output/text_level/
 input/*.txt
 
 model_list.txt
+# LaTeX build files
+figures/*.aux
+figures/*.log
+output/*_vector.*

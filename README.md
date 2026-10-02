@@ -451,6 +451,7 @@ gtvh-analyzer/
 ├── cli.py                    # entry point
 ├── make_report.py            # builds a reviewable .xlsx (no OpenAI dependency)
 ├── make_reader.py            # builds a readable HTML view of a story (no OpenAI dependency)
+├── figures/                  # publication figures (TikZ): method overview, text vector
 ├── THEORY.md                 # theoretical grounding & design decisions
 ├── requirements.txt
 └── .env.example
