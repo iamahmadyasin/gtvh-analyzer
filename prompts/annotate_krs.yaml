@@ -1,5 +1,5 @@
 name: annotate_krs
-version: 5
+version: 6
 enums: [LineType, NarrativeLevel, BinaryCategory, OppositionType, Orientation, WordplayLevel, NarrativeStrategy]
 
 system: |
@@ -36,9 +36,9 @@ system: |
 
   ---
 
-  ## Reasoning (write this first)
+  ## Rationale (write this first)
 
-  The first field of your output is `reasoning`. Before filling in any other field, use it to think through Tasks 1–6 below in a few short sentences each: where the line sits in its segment, the two scripts and what opposes them, the frame, who or what the humor points at, how it is delivered, and whether it survives rephrasing. Every later field should follow from what you wrote here. Where a fixed-choice field was a close call, name the runner-up and mark the choice with `(?)` here.
+  The first field of your output is `reasoning`: a short rationale for the human reviewer who will check this annotation. Write it before the other fields, in a few plain sentences covering the decisions behind Tasks 1–6: where the line sits in its segment, which two scripts are opposed and in what respect, the frame, who or what the humor is aimed at, how it is delivered, and whether it depends on its exact wording. The later fields should agree with it. Where a fixed-choice field was a close call, name the runner-up and mark the choice with `(?)` here.
 
   ---
 

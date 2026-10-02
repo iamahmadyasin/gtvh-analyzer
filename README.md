@@ -120,7 +120,7 @@ Step 3 can also run without the model: `analyze_text.py --no-interpret`.
    *canonical situation* (paraphrases of one frame grouped under its
    most frequent wording; `cotext` and `irr` are never merged). Grouping
    uses OpenAI embeddings, or string similarity with `--normalize string`
-   (no API call). Strands depend on these values being consistent.
+   (no API call; the default with Claude, which has no embeddings API). Strands depend on these values being consistent.
 
 4. **Text-level analysis** (`analyze_text.py`, Stage 4) runs separately on
    saved analyses: distribution, strands, combs and bridges, and jab/punch
@@ -146,7 +146,7 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
 cp .env.example .env             # Windows: copy .env.example .env
-# edit .env and paste your OpenAI API key
+# edit .env and paste your OpenAI and/or Anthropic API key
 
 # drop one or more .txt story files into input/
 python cli.py --model gpt-5.6-luna --no-temperature   # writes output/<story>.json
@@ -160,6 +160,14 @@ python make_reader.py                                 # writes output/<story>.ht
 `--model` is required. The `--no-temperature` flag is needed for the
 GPT-5.6 family and other models that only accept their default
 temperature; drop it if your model accepts `temperature=0`.
+
+To use Claude instead, give a Claude model; the provider is picked from
+the model name (see [Using Claude](#using-claude)):
+
+```bash
+python cli.py --model claude-opus-5-5
+python analyze_text.py --model claude-opus-5-5
+```
 
 Single-file mode:
 
@@ -185,7 +193,11 @@ Options:
 | `--context` | `story` | `story` (full story as context) or `local` (segment text; for annotation, 5 lines plus a "story so far" from the segment descriptions) |
 | `--fresh` | off | ignore saved checkpoints and call the model again |
 | `--batch` | off | use the Batch API: discounted, results within 24 hours |
-| `--normalize` | `embeddings` | group situations and new targets with OpenAI embeddings, or `string` similarity (no API call) |
+| `--provider` | `auto` | `openai` or `claude`; `auto` picks Claude for `claude-*` model names |
+| `--effort` | `high` | Claude only: how much the model thinks (`low` to `max`); lower is cheaper |
+| `--claude-max-tokens` | 16000 | Claude only: output cap per call, thinking included |
+| `--no-fallback` | off | Claude only: don't re-run a declined request on Anthropic's fallback model |
+| `--normalize` | `embeddings` with OpenAI, `string` with Claude | group situations and new targets with OpenAI embeddings, or `string` similarity (no API call) |
 | `--embedding-model` | `text-embedding-3-small` | embedding model for `--normalize embeddings` |
 | `--situation-threshold` | 0.80 | minimum similarity for two situation phrases to share a canonical label |
 | `--target-threshold` | 0.80 | minimum similarity for a new target to join an inventory entry or another new target |
@@ -300,9 +312,58 @@ The text-level command also takes:
 - `--max-strands` (default 20): the largest strands shown to the interpretive call;
 - `--fresh`: ignore the saved interpretation checkpoint.
 
+## Using Claude
+
+The pipeline runs on Claude as well as OpenAI. Give a Claude model name
+and every stage (per-line analysis, the text-level interpretive call,
+and `--batch`) uses the Anthropic API; nothing else changes, and the
+spreadsheet and reading view are the same.
+
+```bash
+python cli.py --model claude-opus-5-5                      # every story in input/
+python cli.py --model claude-sonnet-5-5 --effort medium    # cheaper
+python cli.py --model claude-opus-5-5 --batch              # half price, results within 24h
+python analyze_text.py --model claude-opus-5-5
+```
+
+Put your key in `.env` as `ANTHROPIC_API_KEY` (or sign in with
+`ant auth login`, which the SDK picks up without a key).
+
+**Choosing a model.** Prices per million input/output tokens at the time
+of writing: Claude Opus 5.5 (`claude-opus-5-5`) $4 / $20, Claude Sonnet 5.5
+(`claude-sonnet-5-5`) $2 / $10, Claude Haiku 4.5 (`claude-haiku-4-5`) $1 / $5.
+Cached input costs a tenth of the input price. Opus 5.5 is the most
+capable of the three; Sonnet 5.5 is a reasonable budget choice. As with
+any model change, compare a few stories you have reviewed before
+switching a whole corpus.
+
+**What differs from OpenAI:**
+
+- **Effort instead of temperature.** Claude thinks before answering, and
+  `--effort` sets how much: `low`, `medium`, `high` (the default here,
+  because annotation is judgement-heavy), `xhigh`, `max`. Claude is never
+  sent a temperature, so `--no-temperature` doesn't matter with Claude.
+- **Caching.** The system prompt and the parts every call in a stage
+  shares (the full story, the target inventory) are marked for Claude's
+  prompt cache, so after the first call they are billed at the cached
+  rate. The usage line at the end of a run shows the cached share.
+- **Declined requests.** Claude's safety checks can occasionally decline
+  a request. Requests to Claude Opus 5.5, Opus 5, Sonnet 5.5 and Fable 5.1
+  opt into server-side fallback, which re-runs a declined request on the
+  model Anthropic recommends for that case; `--no-fallback` turns this
+  off. A request that is still declined fails with the reason, and the
+  rest of the run is checkpointed as usual. Fallback is not available in
+  batch mode.
+- **No embeddings.** Anthropic has no embeddings API, so with Claude the
+  canonical labels are grouped with string similarity (`--normalize
+  string`). The thresholds work the same way.
+- **Checkpoints are kept apart.** Claude and OpenAI results never replace
+  each other, and changing `--effort` re-runs the affected calls.
+
 ## Cost controls: prompt caching and checkpoints
 
-**Prompt caching.** OpenAI bills a repeated prompt prefix of 1,024+
+**Prompt caching.** (This describes OpenAI; Claude's caching is in
+[Using Claude](#using-claude).) OpenAI bills a repeated prompt prefix of 1,024+
 tokens at its cached-input rate. Detection and annotation calls are
 ordered so everything shared comes first (the stage's system prompt,
 then the full numbered story) and only the segment- or line-specific
@@ -326,8 +387,8 @@ only the calls that prompt affects (and anything downstream whose input
 changed). Use `--fresh` to ignore saved checkpoints and sample again;
 delete the folder to reclaim space.
 
-**Batch API.** `--batch` sends requests through OpenAI's Batch API,
-which is billed at a discount (50% at the time of writing) in exchange
+**Batch API.** `--batch` sends requests through OpenAI's Batch API (or,
+with a Claude model, Anthropic's Message Batches API), which is billed at a discount (50% at the time of writing) in exchange
 for results within 24 hours rather than immediately. Research runs
 rarely need answers in seconds, so this is the largest saving that
 doesn't change what the model sees. Check that your model is offered
@@ -374,8 +435,13 @@ gtvh-analyzer/
 ├── tests/                    # python -m unittest discover tests
 ├── schemas.py                # Pydantic schemas
 ├── textutils.py              # shared text helpers (no LLM dependency)
-├── llm.py                    # OpenAI structured-output wrapper, caching, checkpoints
-├── batch.py                  # Batch API client (--batch)
+├── llm_base.py               # shared by both providers: checkpoints, usage, concurrency
+├── llm.py                    # OpenAI client
+├── llm_claude.py             # Claude client
+├── batch_base.py             # shared batch queue and resume logic (--batch)
+├── batch.py                  # OpenAI Batch API client
+├── batch_claude.py           # Claude Message Batches client
+├── providers.py              # picks the provider from --model / --provider
 ├── promptlib.py              # loads and checks prompts/*.yaml
 ├── normalize.py              # canonical targets and situations
 ├── textlevel.py              # Stage 4 metrics (deterministic, no API)
@@ -475,15 +541,16 @@ Corrected Canonical Target and Canonical Situation values from the story's workb
   `THEORY.md` for why.
 - No held-out gold-annotated corpus yet. `make_report.py` produces a
   reviewable workbook (with Reviewer Verdict / Notes columns) for manual QA.
-- Single LLM provider (OpenAI) at the moment; `llm.py` (and `batch.py`
-  for `--batch`) are the only files that would need to change to
-  support another.
+- Two providers, OpenAI and Claude. Adding another means one client file
+  (and one batch file for `--batch`) on top of `llm_base.py` and
+  `batch_base.py`, plus a line in `providers.py`.
 - **Stacks** (strands of strands across stories) and **corpus baselines**
   are not built yet. The per-story text-level files are designed to feed
   them without changes.
 - The text-level thresholds are documented defaults, not values from
   the theory. Calibrate them on stories you have reviewed.
-- Tests for the deterministic code: `python -m unittest discover tests`.
+- Tests (deterministic code and the Claude client, no API key needed):
+  `python -m unittest discover tests`.
 
 ## References
 

@@ -22,6 +22,7 @@ import sys
 from dataclasses import fields
 from pathlib import Path
 
+from providers import add_provider_args, make_client
 from schemas import TextLevelReport
 from stages.interpret import interpret_story
 from textlevel import TextLevelParams, compute_metrics, load_analysis
@@ -46,10 +47,9 @@ def _add_param_flags(parser: argparse.ArgumentParser) -> None:
 async def _run(args, params: TextLevelParams) -> int:
     llm = None
     if not args.no_interpret:
-        from llm import LLMClient
-        # GPT-5.6 models reject a temperature parameter: never send one.
-        llm = LLMClient(model=args.model, temperature=None,
-                        checkpoint_dir=CHECKPOINT_DIR, fresh=args.fresh)
+        # GPT-5.6 models reject a temperature parameter, and Claude takes
+        # none: never send one here.
+        llm = make_client(args, CHECKPOINT_DIR, temperature=None)
 
     jobs = [args.json] if args.json else sorted(OUTPUT_DIR.glob("*.json"))
     if not jobs:
@@ -121,7 +121,8 @@ def main() -> None:
                         help="Ignore reviewer corrections in the workbook.")
     parser.add_argument("--out", type=Path, help="Output path when using --json "
                         "(default: output/text_level/<story>.json).")
-    parser.add_argument("--model", help="OpenAI model for the interpretive call. "
+    parser.add_argument("--model", help="Model for the interpretive call (OpenAI, or Claude "
+                        "such as claude-opus-5-5). "
                         "Required unless --no-interpret.")
     parser.add_argument("--no-interpret", action="store_true",
                         help="Deterministic metrics only; no API call.")
@@ -129,6 +130,7 @@ def main() -> None:
                         help="Largest strands shown to the interpretive call (default: 20).")
     parser.add_argument("--fresh", action="store_true",
                         help="Ignore the saved checkpoint for the interpretive call.")
+    add_provider_args(parser)
     _add_param_flags(parser)
     args = parser.parse_args()
 

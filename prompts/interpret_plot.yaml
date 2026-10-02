@@ -1,5 +1,5 @@
 name: interpret_plot
-version: 1
+version: 2
 enums: [HumorousPlotType, EvidenceKind, ComplicationHumor, Confidence]
 
 system: |
@@ -70,9 +70,9 @@ system: |
 
   Cite only ids and figures that appear in the aggregates. Do not invent lines, quotations, or counts.
 
-  ## Reasoning first
+  ## Overview first
 
-  Write `reasoning` before anything else: a short working-through of the aggregates (densest and sparsest regions, the leading strands, the indicators relevant to each plot type). Every later field should follow from it.
+  Write `reasoning` before anything else: a short overview, for the reader, of what the aggregates show (the densest and sparsest regions, the leading strands, the indicators relevant to each plot type). The later fields should agree with it.
 
   ## Output
 
