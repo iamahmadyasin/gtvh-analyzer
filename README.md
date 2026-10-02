@@ -104,6 +104,7 @@ python make_report.py                                 # writes output/<story>.xl
 # optional: correct Canonical Target / Canonical Situation in the workbook, save, then
 python analyze_text.py --model gpt-5.6-luna           # writes output/text_level/<story>.json
 python make_report.py                                 # adds Strands, Distribution, Plot sheets
+python make_reader.py                                 # writes output/<story>.html, a readable view
 ```
 `--model` is required. The `--no-temperature` flag is needed for the
 GPT-5.6 family and other models that only accept their default
@@ -332,6 +333,7 @@ gtvh-analyzer/
 ├── pipeline.py               # end-to-end orchestration
 ├── cli.py                    # entry point
 ├── make_report.py            # builds a reviewable .xlsx (no OpenAI dependency)
+├── make_reader.py            # builds a readable HTML view of a story (no OpenAI dependency)
 ├── THEORY.md                 # theoretical grounding & design decisions
 ├── requirements.txt
 └── .env.example
@@ -391,6 +393,30 @@ Re-running `make_report.py` keeps what you typed in those columns and
 your canonical corrections, matching rows by line ID and text. Cells
 you didn't touch pick up new pipeline values. Close the workbook in
 Excel before rebuilding it.
+
+## Reading view for non-technical readers
+
+`make_reader.py` writes one self-contained HTML file per story
+(`output/<story>.html`). It opens offline in any browser, makes no API
+calls, and has no OpenAI dependency.
+
+```bash
+python make_reader.py                                            # every output/*.json
+python make_reader.py --json output/story.json --title "The Vicar's Bicycle"
+```
+
+- **Reading view.**
+  - The story appears as continuous text. Jab lines are marked in yellow, punch lines in pink, and embedded letters or speeches are set apart.
+  - Hover over a joke for a one-line summary; click it for a plain-English card: the two ideas that collide, who it is aimed at, how it works, and whether it depends on the exact words. The model's reasoning and the technical tags are folded away underneath.
+  - The arrow keys step through the jokes in order.
+- **Whole-story summary**, once `analyze_text.py` has been run:
+  - the plot type in Attardo's terms, and the central complication;
+  - the main patterns with their figures, and any readings, labeled as interpretation;
+  - a density strip beside the text, where darker means more jokes and hatched means serious relief;
+  - filters that light up one strand (one target, setting, or kind of clash) across the whole story.
+- **Margin notes.** A short numbered note beside each joke, like an annotated edition. This is the view the browser prints, with the summary on its own first page.
+
+Corrected Canonical Target and Canonical Situation values from the story's workbook are used here too.
 
 ## Status & limitations
 

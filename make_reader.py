@@ -74,13 +74,13 @@ WORDPLAY = {
     "lexical": "plays on a word's double meaning", "syntactic": "plays on sentence structure",
 }
 PLOT_TYPE = {
-    "serious_plot_with_jab_lines": ("A serious story with jokes along the way",
+    "serious_plot_with_jab_lines": ("Serious plot, with jab lines",
         "The plot itself is not comic; the humor comes in passing."),
-    "humorous_plot_with_punch_line": ("A long joke",
+    "humorous_plot_with_punch_line": ("Humorous plot, with punch line",
         "The story builds to a final punch line that makes you reread what came before."),
-    "humorous_plot_with_metanarrative_disruption": ("A story that plays with storytelling",
+    "humorous_plot_with_metanarrative_disruption": ("Humorous plot, with metanarrative disruption",
         "The humor comes from breaking the conventions of how stories are told."),
-    "humorous_plot_with_humorous_central_complication": ("A comic premise",
+    "humorous_plot_with_humorous_central_complication": ("Humorous plot, with humorous central complication",
         "The event that sets the story in motion is itself funny."),
 }
 FEATURE_NAME = {
@@ -346,11 +346,11 @@ def build_reader(analysis: Analysis, story_text: str, title: str,
             overview = f"""
 <section class="overview" aria-label="The story as a whole">
   <div class="ov-plot">
-    <p class="eyebrow">What kind of story</p>
+    <p class="eyebrow">Plot type (Attardo)</p>
     <h2>{html.escape(name)}</h2>
     <p>{html.escape(gloss)}</p>
-    <p class="muted">Confidence: {it.plot_type_confidence.value}{f'. Could also be read as: {html.escape(runner.lower())}' if runner else ''}.</p>
-    <p class="eyebrow">What sets it in motion</p>
+    <p class="muted">Confidence: {it.plot_type_confidence.value}{f'. Could also be read as: {html.escape(runner)}' if runner else ''}.</p>
+    <p class="eyebrow">Central complication</p>
     <p>{html.escape(it.central_complication.description)}</p>
     <p class="caveat">{html.escape(it.central_complication.caveat)}</p>
   </div>
@@ -437,15 +437,17 @@ PAGE = """<title>{title}</title>
 <script>{js}</script>""".replace("{model_note}", "{model}")
 
 CSS = r"""
-/* Layout: masthead and whole-story overview on top; below, a density rail,
-   the story at reading width, and a sticky explanation panel. Margin-notes
-   view and print put a short note beside each paragraph instead. */
+/* A printed page: white paper, black ink, two highlighters (yellow for jabs,
+   pink for punch lines). Humor density is drawn as ink darkness. Layout:
+   masthead and whole-story overview on top; below, the density rail, the
+   story at reading width, and a sticky explanation panel. Margin-notes view
+   and print put a short note beside each paragraph instead. */
 :root {
-  --paper: #f4f6f9; --sheet: #fdfdfe; --ink: #1c2230; --muted: #5a6376; --rule: #d9dee7;
-  --accent: #1f5f8b; --accent-soft: #e2edf5;
-  --jab: rgba(240, 177, 0, .30); --jab-line: #b07d00;
-  --punch: rgba(214, 69, 101, .22); --punch-line: #b03050;
-  --heat: #1f5f8b; --relief: #8a94a6;
+  --paper: #ffffff; --sheet: #f5f4f1; --ink: #151514; --muted: #67635c; --rule: #e2e0db;
+  --accent: #151514; --accent-soft: #ecebe7;
+  --jab: rgba(255, 213, 0, .40); --jab-line: #9a7400;
+  --punch: rgba(255, 64, 160, .20); --punch-line: #b0186e;
+  --heat: #151514; --relief: #9b978f;
   --dim: .28;
   --font-story: "Literata", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --font-ui: "Instrument Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
@@ -453,17 +455,17 @@ CSS = r"""
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --paper: #12161d; --sheet: #181d26; --ink: #e3e7ee; --muted: #9aa4b6; --rule: #2b3240;
-  --accent: #7fb6dc; --accent-soft: #1d2c3a;
-  --jab: rgba(240, 190, 40, .24); --jab-line: #e2b23c;
-  --punch: rgba(240, 110, 140, .24); --punch-line: #f08aa3;
-  --heat: #7fb6dc; --relief: #6d778a; color-scheme: dark; } }
+  --paper: #151514; --sheet: #1e1e1c; --ink: #ecebe6; --muted: #a39f96; --rule: #31302d;
+  --accent: #ecebe6; --accent-soft: #2b2a27;
+  --jab: rgba(255, 213, 0, .22); --jab-line: #e5c23a;
+  --punch: rgba(255, 92, 175, .22); --punch-line: #ff8fc9;
+  --heat: #ecebe6; --relief: #77736b; color-scheme: dark; } }
 :root[data-theme="dark"] {
-  --paper: #12161d; --sheet: #181d26; --ink: #e3e7ee; --muted: #9aa4b6; --rule: #2b3240;
-  --accent: #7fb6dc; --accent-soft: #1d2c3a;
-  --jab: rgba(240, 190, 40, .24); --jab-line: #e2b23c;
-  --punch: rgba(240, 110, 140, .24); --punch-line: #f08aa3;
-  --heat: #7fb6dc; --relief: #6d778a; color-scheme: dark; }
+  --paper: #151514; --sheet: #1e1e1c; --ink: #ecebe6; --muted: #a39f96; --rule: #31302d;
+  --accent: #ecebe6; --accent-soft: #2b2a27;
+  --jab: rgba(255, 213, 0, .22); --jab-line: #e5c23a;
+  --punch: rgba(255, 92, 175, .22); --punch-line: #ff8fc9;
+  --heat: #ecebe6; --relief: #77736b; color-scheme: dark; }
 
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--paper); color: var(--ink); font: 400 var(--step-0)/1.5 var(--font-ui); }
@@ -491,8 +493,8 @@ button { font: inherit; color: inherit; }
 .findings, .readings { margin: 0 0 1rem; padding-left: 1.1rem; display: grid; gap: .5rem; max-width: 68ch; }
 .fig { display: block; font-size: var(--step--1); color: var(--muted); font-variant-numeric: tabular-nums; }
 .caveat { display: block; font-size: var(--step--1); color: var(--muted); font-style: italic; }
-.pill { display: inline-block; margin-left: .4rem; padding: .05rem .5rem; border-radius: 999px; background: var(--accent-soft);
-  color: var(--accent); letter-spacing: .02em; text-transform: none; font-weight: 600; }
+.pill { display: inline-block; margin-left: .4rem; padding: 0 .45rem; border-radius: 3px; border: 1px solid var(--muted);
+  color: var(--muted); letter-spacing: .02em; text-transform: none; font-weight: 600; }
 
 .toolbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--paper);
   padding-block: .75rem; border-bottom: 1px solid var(--rule); }
@@ -500,7 +502,7 @@ button { font: inherit; color: inherit; }
 .chip { display: inline-flex; gap: .45rem; align-items: center; border: 1px solid var(--rule); background: var(--sheet);
   border-radius: 999px; padding: .3rem .75rem; font-size: var(--step--1); cursor: pointer; }
 .chip .count { color: var(--muted); font-variant-numeric: tabular-nums; }
-.chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.chip[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--paper); }
 .chip[aria-pressed="true"] .count { color: inherit; }
 .chip-sep { width: 1px; height: 1.4rem; background: var(--rule); margin-inline: .3rem; }
 .chip-label { font-size: var(--step--1); color: var(--muted); margin-right: .1rem; }
@@ -511,12 +513,12 @@ button { font: inherit; color: inherit; }
 .cells { display: grid; gap: 3px; width: 1.1rem; }
 .cell { height: 1.6rem; width: 100%; padding: 0; border: 0; border-radius: 3px; cursor: pointer;
   background: color-mix(in srgb, var(--heat) calc(var(--h, 0) * 85% + 6%), var(--rule)); }
-.cell.wave { box-shadow: 0 0 0 2px var(--accent); }
+.cell.wave { box-shadow: 0 0 0 2px var(--jab-line); }
 .cell.relief { background: repeating-linear-gradient(135deg, var(--rule) 0 3px, transparent 3px 6px); }
 .cell.here { outline: 2px solid var(--ink); outline-offset: 1px; }
 .rail-key { margin: 0; display: grid; gap: .3rem; justify-items: center; font-size: .7rem; color: var(--muted); }
 .k { display: block; width: .9rem; height: .5rem; border-radius: 2px; }
-.k.wave { box-shadow: 0 0 0 2px var(--accent); background: var(--heat); }
+.k.wave { box-shadow: 0 0 0 2px var(--jab-line); background: var(--heat); }
 .k.relief { background: repeating-linear-gradient(135deg, var(--rule) 0 2px, transparent 2px 4px); outline: 1px solid var(--rule); }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 
@@ -540,7 +542,7 @@ mark.hl.punch { background: var(--punch); text-decoration: underline 2px solid v
 mark.hl:hover, mark.hl.active { background: color-mix(in srgb, var(--jab-line) 35%, transparent); }
 mark.hl.punch:hover, mark.hl.punch.active { background: color-mix(in srgb, var(--punch-line) 35%, transparent); }
 .page[data-mode="read"] .story.filtering mark.hl:not(.on) { background: transparent; text-decoration-color: var(--rule); opacity: .75; }
-.page[data-mode="read"] .story.filtering mark.hl.on { box-shadow: 0 2px 0 var(--accent); }
+.page[data-mode="read"] .story.filtering mark.hl.on { box-shadow: 0 2px 0 var(--ink); }
 mark.sample { cursor: default; }
 .legend { display: flex; gap: .75rem; font-family: var(--font-story); }
 
