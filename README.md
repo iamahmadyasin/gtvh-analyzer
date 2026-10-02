@@ -19,23 +19,74 @@ See [`THEORY.md`](./THEORY.md) for the full account of which parts of the theory
 
 ## How it works
 
-Per-line LLM stages, each a separate prompt file you can edit without
-touching code, then a text-level stage that runs on the saved results:
+Four steps. The first and third call the model; everything else is plain
+code. Each model call has its own prompt file you can edit without touching
+code, and the later steps run on saved results, so nothing upstream has to
+be re-run.
 
 ```mermaid
-flowchart LR
-    A[story.txt] --> B[Stage 1\nSegmentation]
-    A --> B2[Stage 1b\nTarget inventory]
-    B --> C[Stage 2\nLine Detection]
-    C --> D[Stage 3\nKR Annotation]
-    B2 --> D
-    D --> N[Normalization]
-    N --> E[analysis.json]
-    E --> F[make_report.py\nreview workbook .xlsx]
-    E --> T[Stage 4\nanalyze_text.py]
-    F -. reviewer corrections .-> T
-    T --> F
+flowchart TB
+    story[/"story.txt in input/"/]:::file
+
+    subgraph S1["1 · Per-line analysis · cli.py"]
+        direction TB
+        seg["Segmentation<br/>segment.yaml"]:::ai
+        inv["Target inventory<br/>target_inventory.yaml"]:::ai
+        det["Line detection<br/>detect_lines.yaml"]:::ai
+        ann["KR annotation<br/>annotate_krs.yaml"]:::ai
+        norm["Normalization<br/>canonical targets and situations"]:::code
+        seg --> det --> ann --> norm
+        inv --> ann
+    end
+
+    analysis[("output/story.json")]:::file
+
+    subgraph S2["2 · Your review · make_report.py"]
+        direction TB
+        xlsx[("output/story.xlsx")]:::file
+        you["Check the tags; correct<br/>Canonical Target and Situation"]:::human
+        xlsx --> you
+    end
+
+    subgraph S3["3 · Whole-story analysis · analyze_text.py"]
+        direction TB
+        metrics["Distribution, strands, combs,<br/>bridges, jab and punch counts"]:::code
+        interp["Plot type and central complication<br/>interpret_plot.yaml"]:::ai
+        metrics --> interp
+    end
+
+    tl[("output/text_level/story.json")]:::file
+
+    subgraph S4["4 · Results to read"]
+        direction LR
+        sheets["Strands, Distribution and<br/>Plot sheets · make_report.py"]:::code
+        reader["Reading view, story.html<br/>make_reader.py"]:::code
+    end
+
+    story --> seg
+    story --> inv
+    norm --> analysis
+    analysis --> xlsx
+    analysis --> metrics
+    you -. corrections .-> metrics
+    interp --> tl
+    tl --> sheets
+    tl --> reader
+    analysis --> reader
+
+    classDef ai fill:#fff3b8,stroke:#9a7400,color:#151514
+    classDef code fill:#ffffff,stroke:#67635c,color:#151514
+    classDef human fill:#ffdcec,stroke:#b0186e,color:#151514
+    classDef file fill:#f5f4f1,stroke:#9b978f,color:#151514,stroke-dasharray:4 3
+    style S1 fill:#fafaf8,stroke:#d6d3cc,color:#151514
+    style S2 fill:#fafaf8,stroke:#d6d3cc,color:#151514
+    style S3 fill:#fafaf8,stroke:#d6d3cc,color:#151514
+    style S4 fill:#fafaf8,stroke:#d6d3cc,color:#151514
 ```
+
+**Key:** yellow boxes call the model (and cost tokens); white boxes are plain
+code (free, no API); the pink box is your manual step; dashed boxes are files.
+Step 3 can also run without the model: `analyze_text.py --no-interpret`.
 
 1. **Segmentation** (`prompts/segment.yaml`) partitions the story into
    narrative segments using metatextual markers, setting changes, and
