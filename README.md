@@ -550,7 +550,7 @@ Corrected Canonical Target and Canonical Situation values from the story's workb
   them without changes.
 - The text-level thresholds are documented defaults, not values from
   the theory. Calibrate them on stories you have reviewed.
-- Tests (deterministic code and the Claude client, no API key needed):
+- Tests for the Claude client (no API key needed):
   `python -m unittest discover tests`.
 
 ## References
