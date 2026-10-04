@@ -10,14 +10,13 @@ No model training. No symbolic parsing. Just carefully staged LLM
 calls with a Pydantic schema as the contract between stages, built to
 be legible and editable.
 
+## Rationale
 
-## Why this exists
-
-Raskin's Semantic Script Theory of Humor (1985) and Attardo's General Theory of Verbal Humor (1994) give necessary-and-sufficient conditions for why a text is funny, an actual "falsifiable", linguistic theory of humor competence with a defined annotation scheme. Attardo (2001) extends it from single jokes to full-length narrative texts. This project applies that extended scheme to short stories at scale, using LLMs to do the line-by-line annotation work that a human analyst would otherwise do by hand.
+Raskin's Semantic Script Theory of Humor (1985) gave necessary-and-sufficient linguistic conditions for what makes a text funny and Attardo expanded upon it by postialting a series of Knowledge Resources resulting in General Theory of Verbal Humor (1994). It is the most influential inguistic theory of humor competence with a defined annotation scheme. Attardo (2001) extends it from single jokes to full-length narrative texts. This project applies that extended scheme to short stories at scale, using LLMs to do the line-by-line annotation work that a human analyst would otherwise do by hand.
 
 See [`THEORY.md`](./THEORY.md) for the full account of which parts of the theory are implemented and which are deliberately deferred.
 
-## Pipeline Diagram
+## Pipeline
 
 Four steps. The first and third call the model; everything else is plain
 code. Each model call has its own prompt file you can edit without touching
@@ -95,19 +94,19 @@ Step 3 can also run without the model: `analyze_text.py --no-interpret`.
    line by not, so the pipeline needs to know where units begin and
    end before it can classify anything.
 
-   **Target inventory** (`prompts/target_inventory.yaml`) runs alongside
+   **Target Inventory** (`prompts/target_inventory.yaml`) runs alongside
    it: one call per story listing the characters, groups, institutions
    and ideas the story is likely to target, each tagged with its kind
    (person, group, institution, idea), social class, and social sphere.
 
-2. **Line detection** (`prompts/detect_lines.yaml`) for each segment, it
+2. **Line Detection** (`prompts/detect_lines.yaml`) for each segment, it
    locates humorous spans and classifies them as `discrete`
    (single-trigger), `register_clash` (diffuse register humor), or
    `irony`. One call per segment. Lines inside an embedded segment (a
    letter, a speech) are checked only with that segment, so no joke is
    found twice. Line IDs (`HL-001`, ...) follow story order.
 
-3. **KR annotation** (`prompts/annotate_krs.yaml`) for each detected
+3. **KR Annotation** (`prompts/annotate_krs.yaml`) for each detected
    line, writes a short `reasoning` first and then fills in the
    Knowledge Resource bundle: Script Opposition, Situation, Target,
    Narrative Strategy (from a fixed list), and Language. One call per
@@ -122,7 +121,7 @@ Step 3 can also run without the model: `analyze_text.py --no-interpret`.
    uses OpenAI embeddings, or string similarity with `--normalize string`
    (no API call; the default with Claude, which has no embeddings API). Strands depend on these values being consistent.
 
-4. **Text-level analysis** (`analyze_text.py`, Stage 4) runs separately on
+4. **Text-level Analysis** (`analyze_text.py`, Stage 4) runs separately on
    saved analyses: distribution, strands, combs and bridges, and jab/punch
    counts are computed without any API call, then one interpretive call
    (`prompts/interpret_plot.yaml`) assigns the story one of Attardo's four
@@ -149,10 +148,10 @@ cp .env.example .env             # Windows: copy .env.example .env
 # edit .env and paste your OpenAI and/or Anthropic API key
 
 # drop one or more .txt story files into input/
-python cli.py --model gpt-5.6-luna --no-temperature   # writes output/<story>.json
+python cli.py --model gpt-6-sol --no-temperature      # writes output/<story>.json
 python make_report.py                                 # writes output/<story>.xlsx
 
-python analyze_text.py --model gpt-5.6-luna           # writes output/text_level/<story>.json
+python analyze_text.py --model gpt-6-sol              # writes output/text_level/<story>.json
 python make_report.py                                 # adds Strands, Distribution, Plot sheets
 python make_reader.py                                 # writes output/<story>.html, a readable view
 ```
@@ -213,20 +212,18 @@ on rate-limit errors with exponential backoff.
 
 ## Text-level analysis (Stage 4)
 
-Following Attardo's expanded GTVH for longer texts (*Humorous Texts*,
-2001; "Cognitive stylistics of humorous texts"), the per-line
-annotations of a story are turned into text-level findings: how the
+The per-line annotations of a story are turned into text-level findings: how the
 humor is distributed, which strands connect the lines, how the strands
 are laid out, and what kind of humorous plot the story has. It runs on
 saved analyses, so the per-line pipeline doesn't have to be re-run:
 
 ```bash
-python analyze_text.py --model gpt-5.6-luna                       # every output/*.json
-python analyze_text.py --json output/story.json --no-interpret    # metrics only, no API call
-python analyze_text.py --model gpt-5.6-luna --n-sections 30 --min-strand-lines 4
+python analyze_text.py --model gpt-6-luna                        # every output/*.json
+python analyze_text.py --json output/story.json --no-interpret   # metrics only, no API call
+python analyze_text.py --model gpt-6-luna --n-sections 30 --min-strand-lines 4
 ```
 
-**Deterministic part** (`textlevel.py`, no API calls):
+**Deterministic Part** (`textlevel.py`, no API calls):
 
 - **Distribution.** The text is cut into equal word-count sections; the
   humorous lines in each are counted and the words-per-line ratio is
@@ -248,13 +245,13 @@ python analyze_text.py --model gpt-5.6-luna --n-sections 30 --min-strand-lines 4
   peripheral, with its share of all lines. Keys that select exactly the
   same lines are reported once, with the alternatives as equivalent
   keys.
-- **Combs and bridges** within each strand, using distances measured as
+- **Combs and Bridges** within each strand, using distances measured as
   fractions of the text's length.
-- **Jab/punch distribution** by segment and by narrative level, plus a
+- **Jab/Punch** distribution by segment and by narrative level, plus a
   few plot indicators (final punch lines, metanarrative lines, framing
   segments).
 
-**Interpretive call** (`stages/interpret.py`, one call per story, no
+**Interpretive** call (`stages/interpret.py`, one call per story, no
 temperature sent). It sees the computed aggregates and the segment
 descriptions, never the per-line annotations, and returns:
 - one of Attardo's four humorous plot types (serious plot with jab
@@ -267,7 +264,7 @@ descriptions, never the per-line annotations, and returns:
 Cited ids are checked against the aggregates, and any the model
 invented are reported as citation warnings.
 
-**Reviewer corrections.** If the story's workbook (`output/<story>.xlsx`)
+**Reviewer Corrections.** If the story's workbook (`output/<story>.xlsx`)
 exists, values you corrected in its Canonical Target and Canonical
 Situation columns are used instead of the pipeline's. A target you
 type that matches an inventory entry's label or alias takes that
@@ -296,7 +293,7 @@ recorded in each output file:
 | `--wave-min-ratio` | 1.5 | A section belongs to a wave (peak) if it has at least this many times the mean lines per section. |
 | `--wave-min-lines` | 3 | A wave must contain at least this many lines in total. |
 | `--relief-max-ratio` | 0.25 | A section belongs to a serious-relief stretch if it has at most this many times the mean lines per section. |
-| `--relief-min-fraction` | 0.1 | A serious-relief stretch must cover at least this fraction of the text (Attardo's example was ~1,000 of ~12,800 words). |
+| `--relief-min-fraction` | 0.1 | A serious-relief stretch must cover at least this fraction of text. |
 | `--min-strand-lines` | 3 | A strand needs at least this many lines. |
 | `--strand-pairs` | cross_kr | Pairwise strands: 'none', 'cross_kr' (every pair of features from different KRs), or a comma list such as 'target+opposition_type,target_social_class+so_binary_category'. |
 | `--central-min-span` | 0.6 | A strand is central if its first and last lines are at least this fraction of the text apart (it 'occurs through most of a text'). |
@@ -328,15 +325,7 @@ python analyze_text.py --model claude-opus-5-5
 Put your key in `.env` as `ANTHROPIC_API_KEY` (or sign in with
 `ant auth login`, which the SDK picks up without a key).
 
-**Choosing a model.** Prices per million input/output tokens at the time
-of writing: Claude Opus 5.5 (`claude-opus-5-5`) $4 / $20, Claude Sonnet 5.5
-(`claude-sonnet-5-5`) $2 / $10, Claude Haiku 4.5 (`claude-haiku-4-5`) $1 / $5.
-Cached input costs a tenth of the input price. Opus 5.5 is the most
-capable of the three; Sonnet 5.5 is a reasonable budget choice. As with
-any model change, compare a few stories you have reviewed before
-switching a whole corpus.
-
-**What differs from OpenAI:**
+**Difference from OpenAI:**
 
 - **Effort instead of temperature.** Claude thinks before answering, and
   `--effort` sets how much: `low`, `medium`, `high` (the default here,
@@ -346,22 +335,22 @@ switching a whole corpus.
   shares (the full story, the target inventory) are marked for Claude's
   prompt cache, so after the first call they are billed at the cached
   rate. The usage line at the end of a run shows the cached share.
-- **Declined requests.** Claude's safety checks can occasionally decline
+- **Declined Requests.** Claude's safety checks can occasionally decline
   a request. Requests to Claude Opus 5.5, Opus 5, Sonnet 5.5 and Fable 5.1
   opt into server-side fallback, which re-runs a declined request on the
   model Anthropic recommends for that case; `--no-fallback` turns this
   off. A request that is still declined fails with the reason, and the
   rest of the run is checkpointed as usual. Fallback is not available in
   batch mode.
-- **No embeddings.** Anthropic has no embeddings API, so with Claude the
+- **No Embeddings.** Anthropic has no embeddings API, so with Claude the
   canonical labels are grouped with string similarity (`--normalize
   string`). The thresholds work the same way.
 - **Checkpoints are kept apart.** Claude and OpenAI results never replace
   each other, and changing `--effort` re-runs the affected calls.
 
-## Cost controls: prompt caching and checkpoints
+## Cost Controls
 
-**Prompt caching.** (This describes OpenAI; Claude's caching is in
+**Prompt Caching.** (This describes OpenAI; Claude's caching is in
 [Using Claude](#using-claude).) OpenAI bills a repeated prompt prefix of 1,024+
 tokens at its cached-input rate. Detection and annotation calls are
 ordered so everything shared comes first (the stage's system prompt,
@@ -387,14 +376,15 @@ changed). Use `--fresh` to ignore saved checkpoints and sample again;
 delete the folder to reclaim space.
 
 **Batch API.** `--batch` sends requests through OpenAI's Batch API (or,
-with a Claude model, Anthropic's Message Batches API), which is billed at a discount (50% at the time of writing) in exchange
+with a Claude model, Anthropic's Message Batches API), which is billed at a discount 
+(50% at the time of writing) in exchange
 for results within 24 hours rather than immediately. Research runs
 rarely need answers in seconds, so this is the largest saving that
 doesn't change what the model sees. Check that your model is offered
 on the Batch API before relying on it.
 
 ```bash
-python cli.py --model gpt-5.6-luna --no-temperature --batch
+python cli.py --model gpt-6-sol --no-temperature --batch
 ```
 
 In batch mode every story in `input/` is analyzed together, so a run is
@@ -404,14 +394,13 @@ Progress is printed at each poll. If you stop the process while it
 waits, the batch keeps running on OpenAI's side; re-run the same
 command and it resumes that batch rather than submitting (and paying
 for) it again. Results land in the same checkpoints as online runs, so
-you can mix the two: for example, batch the whole corpus, then re-run
-one story online after editing a prompt.
+you can mix the two.
 
 Each story's run (or, with `--batch`, the whole run) ends with a usage
 line (API calls, checkpoint hits, input tokens with the cached share,
 output tokens), so you can see what caching is saving.
 
-## Project layout
+## Project Layout
 
 ```
 gtvh-analyzer/
@@ -424,7 +413,7 @@ gtvh-analyzer/
 │   ├── target_inventory.yaml # Stage 1b
 │   ├── detect_lines.yaml     # Stage 2
 │   ├── annotate_krs.yaml     # Stage 3
-│   └── interpret_plot.yaml   # Stage 4 interpretive call
+│   └── interpret_plot.yaml   # Stage 4
 ├── stages/
 │   ├── segment.py
 │   ├── inventory.py
@@ -454,7 +443,7 @@ gtvh-analyzer/
 └── .env.example
 ```
 
-## Editing prompts
+## Editing Prompts
 
 Each stage's prompt is a YAML file in `prompts/`, read from disk on
 every run, so you can edit and re-run with no restart. A file has
@@ -477,7 +466,7 @@ nothing else in the codebase needs to change, since `stages/`,
 `pipeline.py`, and `cli.py` only ever handle these as opaque validated
 objects.
 
-## Reviewing annotations
+## Reviewing Annotations
 
 `make_report.py` turns an analysis JSON into an Excel workbook built
 for manual review, not just a data dump.
@@ -509,20 +498,20 @@ your canonical corrections, matching rows by line ID and text. Cells
 you didn't touch pick up new pipeline values. Close the workbook in
 Excel before rebuilding it.
 
-## Reading view for non-technical readers
+## Reading View
 
 `make_reader.py` writes one self-contained HTML file per story
 (`output/<story>.html`). It opens offline in any browser, makes no API
-calls, and has no OpenAI dependency.
+calls, and has no OpenAI dependency. It is suitable for non technical readers.
 
 ```bash
 python make_reader.py                                            # every output/*.json
-python make_reader.py --json output/story.json --title "The Vicar's Bicycle"
+python make_reader.py --json output/story.json --title "xyz"
 ```
 
-- **Reading view.**
+- **Reading View.**
   - The story appears as continuous text. Jab lines are marked in yellow, punch lines in pink, and embedded letters or speeches are set apart.
-  - Hover over a joke for a one-line summary; click it for a plain-English card: the two ideas that collide, who it is aimed at, how it works, and whether it depends on the exact words. The model's reasoning and the technical tags are folded away underneath.
+  - Hover over a joke for a one-line summary; click it for a plain-English card showing KR annotations. The model's reasoning and the technical tags are folded away underneath.
   - The arrow keys step through the jokes in order.
 - **Whole-story summary**, once `analyze_text.py` has been run:
   - the plot type in Attardo's terms, and the central complication;
@@ -531,17 +520,10 @@ python make_reader.py --json output/story.json --title "The Vicar's Bicycle"
   - filters that light up one strand (one target, setting, or kind of clash) across the whole story.
 - **Margin notes.** A short numbered note beside each joke, like an annotated edition. This is the view the browser prints, with the summary on its own first page.
 
-Corrected Canonical Target and Canonical Situation values from the story's workbook are used here too.
-
-## Status & limitations
+## Limitations
 
 - **Logical Mechanism (LM)** is intentionally not implemented. See
   `THEORY.md` for why.
-- No held-out gold-annotated corpus yet. `make_report.py` produces a
-  reviewable workbook (with Reviewer Verdict / Notes columns) for manual QA.
-- Two providers, OpenAI and Claude. Adding another means one client file
-  (and one batch file for `--batch`) on top of `llm_base.py` and
-  `batch_base.py`, plus a line in `providers.py`.
 - **Stacks** (strands of strands across stories) and **corpus baselines**
   are not built yet. The per-story text-level files are designed to feed
   them without changes.
@@ -553,16 +535,15 @@ Corrected Canonical Target and Canonical Situation values from the story's workb
 - Raskin, V. (1985). *Semantic mechanisms of humor.* D. Reidel.
 - Attardo, S. (1994). *Linguistic theories of humor.* Mouton de Gruyter.
 - Attardo, S. (2001). *Humorous Texts: A Semantic and Pragmatic Analysis.* Mouton de Gruyter.
+- Attardo, S. (2002). *Cognitive stylistics of humorous texts.* Benjamins.
 - Attardo, S. (2020). *The Linguistics of Humor: An Introduction.* Oxford University Press.
 
 ## Credits and Acknowledgments
 - **Ahmad Yasin** - Lead Developer & Lead Prompt Engineer
-- **Kahf-ul-Wara** - Testing & Evaluation
+- **Kahf-ul-Wara** - Testing
 - **Hureeza Abid** - Initial Operationalization, Annotation & Prompt Development
 
-
-
-## Associated Research & Citation
+## Associated Research
 
 This software was developed as the practical implementation of our academic research. The foundation of this project is based on three separate but interconnected theses. If you use this software in an academic, official, or commercial capacity, we encourage you to cite the software.
 
@@ -576,7 +557,7 @@ This software was developed as the practical implementation of our academic rese
 
 ---
 
-### Software Citation
+## Software Citation
 To cite the software repository itself you can use the [`CITATION.cff`](./CITATION.cff) file included in this repository, or use the following reference:
 
 > Yasin, Ahmad., Wara, Kahf-ul., & Abid, Hureeza. (2026). *GTVH Analyzer: A Tool for Analyzing Short Stories Using the General Theory of Verbal Humor* [Computer software]. GitHub. https://github.com/iamahmadyasin/gtvh-analyzer
