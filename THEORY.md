@@ -4,7 +4,6 @@ This document records what this project implements from the Semantic Script Theo
 
 The prompts themselves are written as task specifications, not as theory. All theoretical justification lives here, so the prompts can stay lean.
 
-
 ## Lineage of the theory
 
 The framework this project applies evolved over time. Semantic Script Theory of Humor (Raskin, 1985)
@@ -39,13 +38,13 @@ The **disjunctor** i.e. the specific trigger that flips the reader from the firs
 
 ### LM
 
-Logical Mechanism is not implemented. A scoping decision, not a theoretical one. Attardo's (2005) taxonomy of logical mechanisms needs substantially more prompt-engineering, resources and  evaluation work than the other five KRs combined.
+Logical Mechanism is not implemented. A scoping decision based on theoretical issues. Attardo's (2005) taxonomy of logical mechanisms needs substantially more prompt-engineering, resources and evaluation work than the other five KRs combined.
 
 ### SI
 
 The Situation KR refers to the specific topic or "props" of the joke. It is the collection of objects, participants, instruments, activities, and settings that the text is about (Attardo, 1994). Situation is implemented as a single short phrase, or `"cotext"` or `"irr"`. *"Cotext"* is Attardo's own term, used throughout the case-study annotations in *Humorous Texts* (2001).
 Because strands connect lines through shared values, each line also gets a **canonical situation**: the story's paraphrases of one frame are grouped under the most frequent wording (embeddings, or string similarity as a fallback). `cotext` and `irr` are never merged with anything, since they mean "no distinctive frame", not a shared one. Reviewers can correct the canonical value.
-Attardo (2020) clarified that ackgrounded incongruities i.e. standing narrative premises the reader
+Attardo (2020) clarified that backgrounded incongruities i.e. standing narrative premises the reader
 has already accepted (a talking-animal world, an established liar) belong in SI.
 
 ### TA
@@ -65,20 +64,20 @@ The Language knowledge resource encompasses all the linguistic information requi
 - **Wordplay**: phonological / morphological / lexical / syntactic levels. The four-way linguistic-level split is this project's own operationalization for LLM annotation, grounded in the GTVH treatment of the Language KR.
 - **Register effect**: — a marked register choice.
 
-## Text-level analysis (Stage 4)
+## Text-level analysis
 
-Attardo's expanded GTVH treats a long text as a *vector*: humorous lines occur along a text that can only be read in one direction, each line is analyzed for its KRs, and the analysis then looks at how lines relate to one another and where they fall (Attardo, 2001; 2002, pp. 234–236). Stage 4 implements that second step. It is split in two, deliberately: the patterns are computed by code, and only the reading of them is left to a model.
+Attardo's expanded GTVH treats a long text as a *vector*: humorous lines occur along a text that can only be read in one direction, each line is analyzed for its KRs, and the analysis then looks at how lines relate to one another and where they fall (Attardo, 2001; 2002). Stage 4 implements that second step. It is split in two, deliberately: the patterns are computed by code, and only the reading of them is left to a model.
 
 ### Distribution
 
-"[T]he text is segmented in an arbitrary number of sections of equal length. The number of lines occurring in each section is computed" (Attardo, 2002, pp. 236–237), and the resulting histogram is compared against two null hypotheses: that the lines are distributed **randomly**, and that they are distributed **uniformly**. Attardo's measure of density is the words-per-line ratio (Wilde's *Lord Arthur Savile's Crime* averages one line every ~50 words, its opening ~18, its serious-relief passage ~367).
+"The text is segmented in an arbitrary number of sections of equal length. The number of lines occurring in each section is computed" (Attardo, 2002, pp. 236–237), and the resulting histogram is compared against two null hypotheses: that the lines are distributed **randomly**, and that they are distributed **uniformly**. Attardo's measure of density is the words-per-line ratio.
 
 Implementation:
 - Sections are equal **word-count** sections, a configurable number of them (Attardo used 100-word sections on a ~12,800-word story).
 - Each line's position is the midpoint of its quoted text, located by word offset.
 - The words-per-line ratio is reported for the text, each section, each wave and relief stretch, and each segment.
 - **Uniform null:** Pearson chi-square of the section counts against equal expected counts.
-- **Random null:** the coefficient of variation of the gaps between consecutive lines, which is about 1 for random placement, above 1 when lines cluster, and below 1 when they are more evenly spaced than chance. A Peacham-like even text shows up as *more regular than random*; a Wilde-like wavy text as *more clustered*.
+- **Random null:** the coefficient of variation of the gaps between consecutive lines, which is about 1 for random placement, above 1 when lines cluster, and below 1 when they are more evenly spaced than chance. An even text shows up as *more regular than random*; a wavy text as *more clustered*.
 - Both p-values come from Monte Carlo simulation of random placement with a fixed seed. Short stories have few lines, so this is more reliable than asymptotic distributions; with few lines the tests have little power, and "not rejected" should be read accordingly.
 - **Waves** (the peaks of Attardo's "wave" pattern) are runs of sections well above the mean.
 - **Serious relief** is "a stretch of text that presents little or no humour in an otherwise humour-rich environment" (p. 240): runs of sections well below the mean, long enough to matter.
@@ -107,7 +106,7 @@ Jab and punch lines are counted by segment and by narrative level. A punch line 
 
 Attardo distinguishes four kinds of humorous plot (2002, pp. 237–238): a **serious plot with jab lines**, a **humorous plot with a punch line**, a **humorous plot with metanarrative disruption**, and a **humorous plot with a humorous central complication**. The last depends on the "central complication", for which "it is impossible to determine in a non-intuitive fashion" what it is (p. 238). The plot type and the central complication are therefore the job of a single interpretive model call. Its input is the computed aggregates and the segment descriptions, not the per-line data, and its identification of the central complication carries a caveat saying it is intuitive.
 
-The call's output separates **pattern findings** from **readings**, following Attardo's own principle: "the GTVH does not detect social satire as such. It merely detects a strand of jab lines having TAs that all share certain features ... We interpret this finding as representing social satire" (p. 243). Every finding cites the strands, counts or statistics behind it. Every reading names the findings it rests on, is hedged, and carries a caveat. Cited ids are checked against the aggregates.
+The call's output separates **pattern findings** from **readings**, following Attardo's own principle: "the GTVH does not detect social satire as such. It merely detects a strand of jab lines having TAs that all share certain features ... We interpret this finding as representing social satire" (2002, p. 243). Every finding cites the strands, counts or statistics behind it. Every reading names the findings it rests on, is hedged, and carries a caveat. Cited ids are checked against the aggregates.
 
 ### Thresholds and baselines
 

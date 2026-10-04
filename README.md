@@ -210,7 +210,7 @@ Concurrency defaults are low (to respect token-per-minute rate limits);
 raise them if your rate tier allows. The client retries automatically
 on rate-limit errors with exponential backoff.
 
-## Text-level analysis (Stage 4)
+## Text-level Analysis
 
 The per-line annotations of a story are turned into text-level findings: how the
 humor is distributed, which strands connect the lines, how the strands
