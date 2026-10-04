@@ -1,5 +1,10 @@
 """
-Claude client: a thin async wrapper around OpenAI's structured-output API
+Model clients · Claude
+Structured outputs through the Claude Messages API, with prompt caching and the
+refusal fallback.
+
+Reads:   messages from the stages
+Writes:  parsed responses
 """
 
 from __future__ import annotations
@@ -11,10 +16,9 @@ import anthropic
 
 from llm_base import BaseLLMClient, T
 
-# Models that accept server-side refusal fallback in its "default" form.
+# Models that take the server-side refusal fallback in its "default" form.
 FALLBACK_MODELS = {"claude-fable-5-1", "claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5"}
 FALLBACK_BETA = "server-side-fallback-2026-07-01"
-# Models that reject the effort parameter.
 NO_EFFORT_PREFIXES = ("claude-haiku-4-5", "claude-sonnet-4-5")
 EFFORT_LEVELS = ("low", "medium", "high", "xhigh", "max")
 
@@ -49,14 +53,14 @@ class ClaudeClient(BaseLLMClient):
         self.client = anthropic.AsyncAnthropic(**kwargs)
 
     def _checkpoint_settings(self) -> dict:
-        # Effort changes the answer; the provider keeps Claude and OpenAI
-        # results apart even for identical messages.
+        # Effort changes the answer, and the provider name keeps Claude and OpenAI
+        # checkpoints apart even when the messages are identical.
         return {"provider": "anthropic", "model": self.model, "effort": self.effort}
 
     @staticmethod
     def _claude_request(messages: list[dict]) -> tuple[list[dict], list[dict]]:
         """System blocks and one user turn, with cache breakpoints after the
-        system prompt and after the last shared part of the user message."""
+        system prompt and after the last shared user part."""
         system = [{"type": "text", "text": messages[0]["content"],
                    "cache_control": {"type": "ephemeral"}}]
         blocks = [{"type": "text", "text": m["content"]} for m in messages[1:]]
@@ -104,9 +108,8 @@ class ClaudeClient(BaseLLMClient):
         user_message: str | Sequence[str],
         response_model: Type[T],
     ) -> T:
-        """`user_message` may be a list: put the parts shared across calls
-        (e.g. the full story) first and the call-specific part last, so the
-        shared prefix is served from the prompt cache."""
+        """Put the parts shared across calls first; that prefix is then served
+        from the prompt cache."""
         messages = self._messages(system_prompt, user_message)
         checkpoint = self._checkpoint_path(messages, response_model)
         cached = self._load_checkpoint(checkpoint, response_model)

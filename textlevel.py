@@ -1,5 +1,10 @@
 """
-Stage 4a: text-level analysis of one story (deterministic, no API calls).
+Stage 4a · Text-level metrics
+Distribution, strands, combs, bridges and plot indicators for one story, with
+no API calls.
+
+Reads:   output/<story>.json, the story text, reviewer edits in the .xlsx
+Writes:  TextLevelMetrics, saved by analyze_text.py
 """
 
 from __future__ import annotations
@@ -69,7 +74,6 @@ class TextLevelParams:
     relief_min_fraction: float = _param(
         0.10, "A serious-relief stretch must cover at least this fraction of the "
               "text (Attardo's example was ~1,000 of ~12,800 words).")
-    # Strands
     min_strand_lines: int = _param(3, "A strand needs at least this many lines.")
     strand_pairs: str = _param(
         "cross_kr", "Pairwise strands: 'none', 'cross_kr' (every pair of features "
@@ -81,14 +85,12 @@ class TextLevelParams:
     peripheral_max_span: float = _param(
         0.30, "A strand is peripheral if it is confined to at most this fraction "
               "of the text. Strands in between are reported as intermediate.")
-    # Combs and bridges
     comb_min_lines: int = _param(3, "A comb needs at least this many lines of one strand.")
     comb_max_gap: float = _param(
         0.03, "Consecutive lines of a comb are at most this fraction of the text apart.")
     bridge_min_gap: float = _param(
         0.25, "Two consecutive lines of a strand at least this fraction of the "
               "text apart form a bridge.")
-    # Plot indicators
     final_punch_window: float = _param(
         0.05, "A punch line ending within this final fraction of the text counts "
               "as a final punch line (a hint of a 'humorous plot with punch line').")

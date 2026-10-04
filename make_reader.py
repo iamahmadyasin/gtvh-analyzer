@@ -1,5 +1,11 @@
 """
-Readable story view: one self-contained HTML file per story.
+Output · Reading view
+Builds one self-contained HTML page per story, with every humorous line
+highlighted and explained in the margin.
+
+Reads:   output/<story>.json, the story text, text-level results, reviewer
+         edits
+Writes:  output/<story>.html
 """
 
 from __future__ import annotations
@@ -105,8 +111,6 @@ def _strand_name(key: str) -> Optional[str]:
     return FEATURE_NAME[feature].format(v=value)
 
 
-# ---------- locating the marks in the text ----------
-
 def _spans(line: AnnotatedLine, paragraphs: dict[int, str]) -> list[tuple[int, int, int]]:
     """(paragraph number, start char, end char) pieces covered by a line:
     the quoted text where it can be found, else the whole paragraphs."""
@@ -152,8 +156,6 @@ def _paint(text: str, ranges: list[tuple[int, int, str]], kinds: dict[str, str],
             out.append(f'<sup class="ref" aria-hidden="true">{numbers[lid]}</sup>')
     return "".join(out)
 
-
-# ---------- page ----------
 
 def _card_data(line: AnnotatedLine, target: Optional[str], situation: Optional[str],
                seg_label: str, number: int, strands: list[str]) -> dict:
@@ -286,7 +288,6 @@ def build_reader(analysis: Analysis, story_text: str, title: str,
     if open_inset:
         body.append("</div>")
 
-    # Overview, density strip and filters (only with text-level results)
     n_lines, n_punch = len(lines), sum(k == "punch" for k in kinds.values())
     per = round(total / n_lines) if n_lines else None
     stats = [f"{total:,} words", f"{n_lines} humorous lines",

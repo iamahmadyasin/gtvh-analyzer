@@ -1,5 +1,10 @@
 """
-Claude Message Batches client: half the standard price, results within 24 hours.
+Batch clients · Claude
+Sends a stage as one Claude message batch: half the price, results within 24
+hours.
+
+Reads:   queued requests from batch_base.py
+Writes:  checkpointed responses
 """
 
 from __future__ import annotations
@@ -36,8 +41,8 @@ class ClaudeBatchClient(BatchQueueMixin, ClaudeClient):
         return batch.id
 
     async def _collect(self, batch_id: str) -> dict[str, str | Exception]:
-        """Wait for a batch to end, checkpoint every successful result, and
-        return raw JSON text (or an error) per custom_id."""
+        """Waits for the batch to end, checkpoints each success, and returns raw
+        JSON or an error per custom_id."""
         started = time.monotonic()
         while True:
             try:

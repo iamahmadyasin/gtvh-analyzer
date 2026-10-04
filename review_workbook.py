@@ -1,5 +1,9 @@
 """
-Reading reviewer input back out of a report workbook.
+Review · Reviewer edits
+Reads the reviewer's columns back out of a report workbook.
+
+Reads:   output/<story>.xlsx
+Writes:  reviewer rows for textlevel.py, make_report.py and make_reader.py
 """
 
 from __future__ import annotations

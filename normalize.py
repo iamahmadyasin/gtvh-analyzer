@@ -1,5 +1,11 @@
 """
-Canonical target and situation labels for one story.
+Pipeline · Normalization
+Gives every line a canonical target and situation, so lines about the same
+thing can be grouped into strands.
+
+Reads:   annotated lines and the target inventory
+Writes:  canonical_target, canonical_target_id and canonical_situation on each
+         line
 """
 
 from __future__ import annotations
@@ -141,7 +147,8 @@ async def normalize_analysis(
     params: NormalizationParams = NormalizationParams(),
     embed: Optional[Embed] = None,
 ) -> None:
-    """Fill in canonical_target(_id) and canonical_situation on every line."""
+    """Fills in canonical_target, canonical_target_id and canonical_situation on
+    every line."""
     situations, new_targets, names = _labels(analysis)
     similarity, used = await make_similarity(
         [*situations, *new_targets, *names], params.method, embed
@@ -150,7 +157,8 @@ async def normalize_analysis(
 
 
 def normalize_offline(analysis: Analysis, params: NormalizationParams = NormalizationParams()) -> None:
-    """The same, with string similarity only: no API call, no event loop."""
+    """Same as normalize_analysis, but with string similarity only: no API call
+    and no event loop."""
     _apply(analysis, params, string_similarity, "string")
 
 

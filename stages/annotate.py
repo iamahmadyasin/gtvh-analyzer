@@ -1,10 +1,10 @@
-"""Stage 3: KR annotation.
+"""
+Stage 3 · Annotation
+Annotates each detected line with the knowledge resources, one model call per
+line.
 
-One LLM call per detected line, fanned out with a concurrency cap. Each call sees the line
-and its containing segment, the story's target inventory, and either the full story or a
-local window of surrounding lines plus a "story so far" built from the Stage 1 segment
-descriptions. The story and the inventory are the same in every call for a story, so they
-come first and are served from the prompt cache after the first call.
+Reads:   detected lines, segments, the target inventory, the story
+Writes:  one KRAnnotation per line
 """
 
 from __future__ import annotations
@@ -26,9 +26,8 @@ def _context_window(
 
 
 def story_so_far(segment: NarrativeSegment, segments: list[NarrativeSegment]) -> str:
-    """Summaries of every segment that starts before this one (including the
-    segments it is embedded in), in story order. Free longer-range context
-    for local mode: no extra model call, just the Stage 1 descriptions."""
+    """Descriptions of every segment that starts before this one, in story order:
+    longer-range context for local mode at no extra cost."""
     earlier = sorted(
         (s for s in segments
          if s.segment_id != segment.segment_id and s.line_start <= segment.line_start),

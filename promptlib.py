@@ -1,3 +1,12 @@
+"""
+Prompts · Loader
+Loads prompts/*.yaml, checks that each prompt documents its enum values, and
+fills in templates.
+
+Reads:   prompts/*.yaml, the enums in schemas.py
+Writes:  Prompt objects for the stages
+"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

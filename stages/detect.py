@@ -1,15 +1,9 @@
-"""Stage 2: humorous instance detection.
+"""
+Stage 2 · Detection
+Finds the humorous lines in each segment, one model call per segment.
 
-One LLM call per segment, fanned out with a concurrency cap. With the
-full story, every call starts with the same numbered story text
-(served from the prompt cache after the first call) and names the lines
-to analyze; without one, each call gets only its segment's text.
-
-Embedded segments (level_-1, level_-2) sit inside their parent's line
-range, so every story line is assigned to the innermost segment that
-contains it. Each segment is sent only the lines it owns; otherwise the
-lines of an embedded letter or speech would be detected (and annotated)
-twice: once with the parent and once on their own.
+Reads:   the numbered story and its segments
+Writes:  a list of DetectedLine, numbered HL-001 onwards in story order
 """
 
 from __future__ import annotations
@@ -22,12 +16,10 @@ from schemas import DetectedLine, DetectionResult, NarrativeSegment
 def assign_line_owners(
     segments: list[NarrativeSegment], n_lines: int
 ) -> dict[str, list[int]]:
-    """Map segment_id -> the 1-based line numbers it owns.
-
-    A line belongs to the smallest segment whose range contains it (ties
-    go to the later segment, which is the more deeply nested one when the
-    model lists parents first). Lines no segment covers are left out.
-    """
+    """Maps segment_id to the 1-based line numbers it owns. A line belongs to the
+    smallest segment containing it, so the lines of an embedded letter aren't
+    detected twice. Ties go to the later segment, the more deeply nested one
+    when parents are listed first; lines no segment covers are left out."""
     owned: dict[str, list[int]] = {s.segment_id: [] for s in segments}
     for line_no in range(1, n_lines + 1):
         best: NarrativeSegment | None = None

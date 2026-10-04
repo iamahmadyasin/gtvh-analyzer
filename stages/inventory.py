@@ -1,10 +1,10 @@
-"""Stage 1b: story-level target inventory.
+"""
+Stage 1b · Target inventory
+Lists the characters, groups, institutions and ideas the story may target, so
+annotation reuses one label per butt.
 
-One call per story, before annotation. Lists the characters, groups,
-institutions, and ideas the story is likely to target, each tagged with a
-few attributes, so the annotation stage can reuse one label per butt and
-the text-level stage can build strands from targets that share a feature, 
-not only from identical targets.
+Reads:   the numbered story
+Writes:  a list of TargetEntry, with ids T-01, T-02, ...
 """
 
 from __future__ import annotations

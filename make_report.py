@@ -1,3 +1,12 @@
+"""
+Output · Excel report
+Builds the review workbook: one row per humorous line, editable canonical
+columns, and the text-level sheets.
+
+Reads:   output/<story>.json, the story text, output/text_level/<story>.json
+Writes:  output/<story>.xlsx
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -61,15 +70,14 @@ def build_report(
     out_path: Path,
     text_level: Optional[TextLevelReport] = None,
 ) -> int:
-    """Write the workbook; returns how many reviewer canonical edits from
-    the previous version of the workbook were kept."""
+    """Writes the workbook and returns how many reviewer edits it carried over
+    from the previous version."""
     review = read_review(out_path)
     n_lines = len(story_text.splitlines())
 
-    # Map each global line number -> containing segment label
     def segment_for_line(line_no: int) -> str:
-        # Innermost segment, so lines of an embedded letter or speech show
-        # that segment rather than the story it sits in
+        # The innermost segment, so a line in an embedded letter or speech shows
+        # that segment rather than the story around it.
         containing = [s for s in analysis.segments
                       if s.line_start <= line_no <= s.line_end]
         if not containing:
@@ -104,7 +112,7 @@ def build_report(
         ann_cell = story_ws.cell(row=row, column=4)
         if ids:
             ann_cell.value = ", ".join(ids)
-            # Jump to the first annotation touching this line
+            # Links to the first annotation that touches this line.
             first_row = annotation_row[ids[0]]
             ann_cell.hyperlink = Hyperlink(ref=ann_cell.coordinate, location=f"Annotations!A{first_row}")
             ann_cell.font = HYPERLINK_FONT
@@ -114,9 +122,8 @@ def build_report(
     _autofit(story_ws, {1: 8, 2: 24, 3: 90, 4: 18})
     story_ws.auto_filter.ref = f"A1:D{n_lines + 1}"
 
-    # Annotations sheet
     ann_ws = wb.create_sheet("Annotations")
-    # (header, width); editable columns are listed in EDITABLE below
+    # (header, width)
     ann_columns = [
         ("Line ID", 10), ("Context ▶", 14), ("Classification", 12),
         ("Narrative Level", 14), ("Segment", 22), ("Line Type", 14),
@@ -248,7 +255,6 @@ def build_report(
 
     wb.move_sheet(GENERATED_SHEET, offset=len(wb.sheetnames))
 
-    # Apply the base font everywhere
     for ws in wb.worksheets:
         for row in ws.iter_rows():
             for cell in row:

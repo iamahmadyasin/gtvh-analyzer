@@ -1,5 +1,10 @@
 """
-OpenAI client: a thin async wrapper around OpenAI's structured-output API.
+Model clients · OpenAI
+Structured outputs and embeddings through the OpenAI API, with retries and
+prompt caching.
+
+Reads:   messages from the stages
+Writes:  parsed responses and embeddings
 """
 
 from __future__ import annotations
@@ -20,8 +25,6 @@ __all__ = ["LLMClient", "Usage", "run_all", "R", "T"]
 
 
 class LLMClient(BaseLLMClient):
-    """OpenAI (Chat Completions structured outputs)."""
-
     def __init__(
         self,
         model: str,
@@ -77,9 +80,8 @@ class LLMClient(BaseLLMClient):
         user_message: str | Sequence[str],
         response_model: Type[T],
     ) -> T:
-        """`user_message` may be a list: put the parts shared across calls
-        (e.g. the full story) first and the call-specific part last, so the
-        shared prefix can be served from the provider's prompt cache."""
+        """Put the parts shared across calls first; that prefix is then served
+        from the prompt cache."""
         messages = self._messages(system_prompt, user_message)
         checkpoint = self._checkpoint_path(messages, response_model)
         cached = self._load_checkpoint(checkpoint, response_model)
@@ -116,8 +118,8 @@ class LLMClient(BaseLLMClient):
         return result
 
     async def embed(self, texts: Sequence[str], model: str) -> list[list[float]]:
-        """Embedding vectors for `texts`, in order. Checkpointed like
-        structured calls, so re-running normalization is free."""
+        """Embeddings for texts, in order. Checkpointed, so re-running
+        normalization costs nothing."""
         texts = list(texts)
         if not texts:
             return []
@@ -147,8 +149,8 @@ class LLMClient(BaseLLMClient):
         return vectors
 
     async def _with_retries(self, call: Callable[[], Awaitable[R]]) -> R:
-        """Run one API request, retrying rate limits (honoring retry-after)
-        and transient server or connection errors with backoff."""
+        """Retries rate limits (honoring retry-after) and transient server or
+        connection errors."""
         last_exc: Exception | None = None
 
         for attempt in range(self.max_retries):
@@ -161,7 +163,7 @@ class LLMClient(BaseLLMClient):
                 delay = suggested if suggested is not None else min(
                     self.base_delay * (2 ** attempt), self.max_delay
                 )
-                delay += random.uniform(0, 0.5)  # jitter, avoid thundering herd
+                delay += random.uniform(0, 0.5)  # jitter, so parallel calls don't all retry at the same moment
                 if self.verbose:
                     print(
                         f"    rate limited — waiting {delay:.1f}s "

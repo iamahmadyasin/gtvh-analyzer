@@ -1,5 +1,9 @@
 """
-Choosing the model provider for a run.
+Model clients · Provider choice
+Picks OpenAI or Claude from --model and --provider, and builds the client.
+
+Reads:   command-line arguments
+Writes:  a model client
 """
 
 from __future__ import annotations

@@ -1,4 +1,11 @@
-"""End-to-end pipeline orchestration."""
+"""
+Pipeline · Stages 1 to 3
+Segmentation, target inventory, detection, annotation and normalization for one
+story.
+
+Reads:   the story text
+Writes:  an Analysis, saved by cli.py as output/<story>.json
+"""
 
 from __future__ import annotations
 
@@ -62,10 +69,9 @@ async def analyze(
     normalization: NormalizationParams = NormalizationParams(),
     embedding_model: str = "text-embedding-3-small",
 ) -> Analysis:
-    """`context="story"` gives stages 2 and 3 the full story as a shared,
-    cacheable first message; `"local"` gives them only the segment text
-    or a few surrounding lines plus a summary of earlier segments (fewer
-    input tokens, less context)."""
+    """`context="story"` sends stages 2 and 3 the full story as a cached shared
+    prefix; `"local"` sends only the nearby text, which costs fewer tokens but
+    gives less context."""
     numbered = number_lines(story_text)
     story_lines = numbered.splitlines()
     full_story = numbered if context == "story" else None

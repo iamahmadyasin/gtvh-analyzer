@@ -1,6 +1,9 @@
 """
-CLI entry point.
-Default behavior: analyze every .txt in ./input, write .json into ./output.
+Entry point · Story analysis
+Runs stages 1 to 3 on every .txt in input/, or on one file with --file.
+
+Reads:   input/*.txt
+Writes:  output/<story>.json
 """
 
 from __future__ import annotations
@@ -58,7 +61,6 @@ async def analyze_one(
 
 
 async def _main() -> None:
-    # Load .env if python-dotenv is installed and .env exists
     try:
         from dotenv import load_dotenv
         load_dotenv(ROOT / ".env")
@@ -188,7 +190,6 @@ async def _main() -> None:
             sys.exit(1)
         jobs = [(args.file, args.out or (OUTPUT_DIR / (args.file.stem + ".json")))]
     else:
-        # Directory mode: everything in input/
         if not INPUT_DIR.exists():
             print(f"Input directory does not exist: {INPUT_DIR}", file=sys.stderr)
             sys.exit(1)
@@ -199,7 +200,7 @@ async def _main() -> None:
         jobs = [(f, OUTPUT_DIR / (f.stem + ".json")) for f in files]
 
     if args.batch:
-        # All stories at once, so each stage's requests share one batch.
+        # All stories together, so each stage is a single batch.
         outcomes = await asyncio.gather(
             *[analyze_one(i, o, llm, *run_opts) for i, o in jobs],
             return_exceptions=True,

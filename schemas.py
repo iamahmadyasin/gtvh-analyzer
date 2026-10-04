@@ -1,14 +1,18 @@
 """
-Pydantic schemas implements the annotation schema.
+Data · Schemas
+The Pydantic models for every model response and every saved file.
 
-LLM-facing models avoid default values because OpenAI structured
-outputs require all fields to be present in `required`. Optional
-fields use `Optional[X]`.
+Reads:   model responses, saved analyses and text-level results
+Writes:  the shape of output/<story>.json and output/text_level/<story>.json
 """
 
 from typing import Literal, Optional
 from enum import Enum
 from pydantic import BaseModel
+
+# The models the LLM fills in have no default values: OpenAI structured
+# outputs need every field listed in `required`. Optional fields use
+# Optional[X].
 
 
 class NarrativeLevel(str, Enum):
@@ -110,8 +114,6 @@ class TextSpan(BaseModel):
     line_end: int
     text: str
 
-# Stage 1: Segmentation
-
 class NarrativeSegment(BaseModel):
     segment_id: str
     label: str
@@ -156,8 +158,6 @@ class DetectedLine(BaseModel):
 class DetectionResult(BaseModel):
     lines: list[DetectedLine]
 
-
-# Stage 3: KR Annotation
 
 class ScriptOpposition(BaseModel):
     script_1: str

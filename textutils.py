@@ -1,3 +1,11 @@
+"""
+Utility · Text helpers
+Numbers the story's lines for the prompts.
+
+Reads:   the story text
+Writes:  the numbered text, one 'Line N: ...' per line
+"""
+
 from __future__ import annotations
 
 

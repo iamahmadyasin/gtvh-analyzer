@@ -1,12 +1,12 @@
-"""Stage 4b: one interpretive call per story.
+"""
+Stage 4b · Interpretation
+One model call per story: plot type, central complication, pattern findings and
+readings.
 
-Input is the text-level aggregates computed by textlevel.py plus the
-segment descriptions, never the per-line annotations. Output assigns one
-of Attardo's four humorous plot types, identifies the central
-complication, and separates pattern findings from readings layered on top of them.
-
-After the call, every cited id is checked against the aggregates; ids the
-model invented are reported as citation warnings rather than silently kept.
+Reads:   the text-level metrics and segment descriptions, never the per-line
+         annotations
+Writes:  a PlotInterpretation, plus a warning for every cited id that doesn't
+         exist
 """
 
 from __future__ import annotations

@@ -1,9 +1,10 @@
 """
-Text-level stage, run on saved analyses
+Entry point · Text-level analysis
+Runs Stage 4 on saved analyses: the metrics, then one interpretive call per
+story unless --no-interpret is given.
 
-For each analysis it computes the deterministic metrics,
-then, unless --no-interpret, makes one interpretive call per story. 
-Results turn into the Strands, Distribution and Plot sheets.
+Reads:   output/<story>.json, the story text, reviewer edits in the .xlsx
+Writes:  output/text_level/<story>.json
 """
 
 from __future__ import annotations
@@ -39,8 +40,7 @@ def _add_param_flags(parser: argparse.ArgumentParser) -> None:
 async def _run(args, params: TextLevelParams) -> int:
     llm = None
     if not args.no_interpret:
-        # GPT-5.6 models reject a temperature parameter, and Claude takes
-        # none: never send one here.
+        # No temperature here: GPT-5.6 models reject it and Claude never gets one.
         llm = make_client(args, CHECKPOINT_DIR, temperature=None)
 
     jobs = [args.json] if args.json else sorted(OUTPUT_DIR.glob("*.json"))
@@ -48,7 +48,7 @@ async def _run(args, params: TextLevelParams) -> int:
         print(f"No analysis JSON in {OUTPUT_DIR}. Run cli.py first.")
         return 1
     failures = 0
-    for json_path in jobs:  # one story at a time: low tokens-per-minute limit
+    for json_path in jobs:  # one story at a time, to stay under the tokens-per-minute limit
         print(f"→ Text-level analysis of {json_path.name}")
         try:
             analysis, raw = load_analysis(json_path)

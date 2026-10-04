@@ -1,4 +1,10 @@
-"""Stage 1: narrative segmentation."""
+"""
+Stage 1 · Segmentation
+Splits the story into narrative segments with their levels and line ranges.
+
+Reads:   the numbered story
+Writes:  a list of NarrativeSegment
+"""
 
 from __future__ import annotations
 

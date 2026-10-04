@@ -1,6 +1,9 @@
 """
-Provider-neutral parts of the model clients.
-The provider clients subclass implement the actual API calls.
+Model clients · Shared base
+Checkpoints, usage counts and the concurrency runner used by both providers.
+
+Reads:   messages from the stages, output/.checkpoints/
+Writes:  output/.checkpoints/
 """
 
 from __future__ import annotations
@@ -42,8 +45,6 @@ class Usage:
 
 
 class BaseLLMClient:
-    """Shared state and helpers; subclasses implement call_structured."""
-
     def __init__(
         self,
         model: str,
@@ -56,14 +57,11 @@ class BaseLLMClient:
         self.temperature = temperature
         self.verbose = verbose
         self.checkpoint_dir = checkpoint_dir
-        self.fresh = fresh  # ignore existing checkpoints (still writes new ones)
+        self.fresh = fresh  # skip saved checkpoints, but still save new ones
         self.usage = Usage()
 
-    # ---------- checkpoints ----------
-
     def _checkpoint_settings(self) -> dict:
-        """Settings besides the messages that change the response. Part of
-        every checkpoint key, so changing one re-runs the affected calls."""
+        """Settings that change the answer; changing one re-runs the affected calls."""
         return {"model": self.model, "temperature": self.temperature}
 
     def _checkpoint_path(
@@ -84,26 +82,22 @@ class BaseLLMClient:
         try:
             return response_model.model_validate_json(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
-            return None  # unreadable or stale: just recompute
+            return None  # unreadable or out of date: recompute
 
     @staticmethod
     def _save_checkpoint(path: Path | None, result: BaseModel | str) -> None:
-        """Write a parsed result (or its raw JSON text) atomically."""
         if path is None:
             return
         path.parent.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(".tmp")
         text = result if isinstance(result, str) else result.model_dump_json()
         tmp.write_text(text, encoding="utf-8")
-        os.replace(tmp, path)  # atomic: an interrupted write never leaves half a file
-
-    # ---------- messages ----------
+        os.replace(tmp, path)  # atomic, so an interrupted run never leaves half a file
 
     @staticmethod
     def _messages(system_prompt: str, user_message: str | Sequence[str]) -> list[dict]:
-        """Provider-neutral message list: the system prompt, then each part
-        of the user message in order (shared parts first, the call-specific
-        part last). Also the input to checkpoint keys."""
+        """System prompt, then each user part in order. Checkpoint keys are built
+        from this list."""
         parts = [user_message] if isinstance(user_message, str) else list(user_message)
         return [{"role": "system", "content": system_prompt}] + [
             {"role": "user", "content": part} for part in parts
@@ -111,10 +105,8 @@ class BaseLLMClient:
 
     @staticmethod
     def _cache_key(messages: list[dict]) -> str:
-        """Same for every call sharing everything but the last message."""
+        """Identical for calls that differ only in their last message."""
         return _sha256(messages[:-1])[:32]
-
-    # ---------- interface ----------
 
     async def map(
         self,
@@ -122,7 +114,7 @@ class BaseLLMClient:
         fn: Callable[[R], Awaitable[T]],
         concurrency: int,
     ) -> list[T]:
-        """Run one stage's calls. See `run_all`."""
+        """Batch clients override this to queue a whole stage at once."""
         return await run_all(items, fn, concurrency)
 
     async def call_structured(
@@ -134,8 +126,8 @@ class BaseLLMClient:
         raise NotImplementedError
 
     async def embed(self, texts: Sequence[str], model: str) -> list[list[float]]:
-        """Embedding vectors for `texts`. Providers without an embeddings API
-        raise, and normalization falls back to string similarity."""
+        """Providers without an embeddings API raise here, and normalization falls
+        back to string similarity."""
         raise NotImplementedError(f"{type(self).__name__} has no embeddings API")
 
 
@@ -145,14 +137,9 @@ async def run_all(
     concurrency: int,
     warm_up: bool = True,
 ) -> list[T]:
-    """Run `fn` over `items` with a concurrency cap.
-
-    With `warm_up`, the first item runs alone so its prompt prefix is
-    cached before the rest start; parallel requests sent before any
-    response would all miss the cache. Every call runs to completion even
-    if some fail, so each success is checkpointed; failures are then
-    raised together and a re-run only repeats the calls that failed.
-    """
+    """Runs fn over items with a concurrency cap. Every call finishes before
+    failures are raised, so each success is checkpointed and a re-run repeats
+    only the calls that failed."""
     if not items:
         return []
     sem = asyncio.Semaphore(concurrency)
@@ -161,6 +148,8 @@ async def run_all(
         async with sem:
             return await fn(item)
 
+    # The first call goes alone, so its prompt prefix is cached before the
+    # others are sent; requests sent together would all miss the cache.
     first = 1 if warm_up else 0
     results = await asyncio.gather(
         *[_guarded(item) for item in items[:first]], return_exceptions=True

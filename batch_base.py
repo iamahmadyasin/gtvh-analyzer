@@ -1,5 +1,10 @@
 """
-Batch-mode plumbing shared by the OpenAI and Claude batch clients.
+Batch clients · Shared queue
+Collects a stage's requests into one batch and resumes batches from an
+interrupted run.
+
+Reads:   queued requests, output/.checkpoints/batches/
+Writes:  checkpointed responses, output/.checkpoints/batches/
 """
 
 from __future__ import annotations
@@ -31,8 +36,6 @@ class BatchQueueMixin:
         self._queue: dict[str, _Queued] = {}
         self._flusher: asyncio.Task | None = None
 
-    # ---------- provider hooks ----------
-
     def _batch_body(self, messages: list[dict], response_model: Type[BaseModel]) -> dict:
         raise NotImplementedError
 
@@ -42,16 +45,14 @@ class BatchQueueMixin:
     async def _collect(self, batch_id: str) -> dict[str, str | Exception]:
         raise NotImplementedError
 
-    # ---------- queueing ----------
-
     async def map(
         self,
         items: Sequence[R],
         fn: Callable[[R], Awaitable[T]],
         concurrency: int,
     ) -> list[T]:
-        # Queue everything at once: a concurrency cap or a warm-up call
-        # would split one stage into many batches, each a separate wait.
+        # The whole stage goes in one batch. A concurrency cap or a warm-up call
+        # would split it into several batches, each with its own wait.
         return await run_all(items, fn, max(len(items), 1), warm_up=False)
 
     async def call_structured(self, system_prompt, user_message, response_model):

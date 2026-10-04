@@ -1,5 +1,9 @@
 """
-OpenAI Batch API client: half the standard price, results within 24 hours. 
+Batch clients · OpenAI
+Sends a stage as one OpenAI batch: half the price, results within 24 hours.
+
+Reads:   queued requests from batch_base.py
+Writes:  checkpointed responses
 """
 
 from __future__ import annotations
@@ -21,8 +25,6 @@ TERMINAL = {"completed", "failed", "expired", "cancelled"}
 
 
 class BatchLLMClient(BatchQueueMixin, LLMClient):
-    """OpenAI Batch API. Shared queueing and resume logic: batch_base.py."""
-
     def __init__(self, *args, poll_interval: float = 60.0, idle_wait: float = 0.5, **kwargs):
         super().__init__(*args, **kwargs)
         self._init_batch(poll_interval, idle_wait)
@@ -54,8 +56,8 @@ class BatchLLMClient(BatchQueueMixin, LLMClient):
         return batch.id
 
     async def _collect(self, batch_id: str) -> dict[str, str | Exception]:
-        """Wait for a batch to finish, checkpoint every successful result,
-        and return raw JSON content (or an error) per custom_id."""
+        """Waits for the batch to finish, checkpoints each success, and returns
+        raw JSON or an error per custom_id."""
         started = time.monotonic()
         while True:
             try:
