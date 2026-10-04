@@ -16,6 +16,14 @@ Raskin's Semantic Script Theory of Humor (1985) gave necessary-and-sufficient li
 
 See [`THEORY.md`](./THEORY.md) for the full account of which parts of the theory are implemented and which are deliberately deferred.
 
+## Portable Desktop Version
+
+Prefer not to deal with Python, virtual environments, or the command line? A portable desktop version of GTVH Analyzer is available. It runs as a standalone application, so there is nothing to install or configure beyond your own API key.
+
+The portable version is updated alongside every update to this repository, so it always matches the latest code.
+
+To request a copy, email me at [iamahmadyasinedu@gmail.com](mailto:iamahmadyasinedu@gmail.com?subject=GTVH%20Analyzer%20Portable%20Version%20Request) with the subject line: `GTVH Analyzer Portable Version Request`.
+
 ## Pipeline
 
 Four steps. The first and third call the model; everything else is plain
