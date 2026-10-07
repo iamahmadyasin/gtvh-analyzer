@@ -531,7 +531,7 @@ python make_reader.py --json output/story.json --title "xyz"
 ## Limitations
 
 - **Logical Mechanism (LM)** is intentionally not implemented. See
-  `THEORY.md` for why.
+  [`THEORY.md`](./THEORY.md) for why.
 - **Stacks** (strands of strands across stories) and **corpus baselines**
   are not built yet. The per-story text-level files are designed to feed
   them without changes.
@@ -568,7 +568,7 @@ This software was developed as the practical implementation of our academic rese
 ## Software Citation
 To cite the software repository itself you can use the [`CITATION.cff`](./CITATION.cff) file included in this repository, or use the following reference:
 
-> Yasin, Ahmad., Wara, Kahf-ul., & Abid, Hureeza. (2026). *GTVH Analyzer: A Tool for Analyzing Short Stories Using the General Theory of Verbal Humor* [Computer software]. GitHub. https://github.com/iamahmadyasin/gtvh-analyzer
+> Yasin, Ahmad. (2026). *GTVH Analyzer: A Tool for Analyzing Short Stories Using the General Theory of Verbal Humor* [Computer software]. GitHub. https://github.com/iamahmadyasin/gtvh-analyzer
 
 ## License
 

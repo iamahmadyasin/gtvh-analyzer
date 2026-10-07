@@ -5,10 +5,6 @@ title: "GTVH Analyzer: A Tool for Analyzing Short Stories Using the General Theo
 authors:
   - family-names: "Yasin"
     given-names: "Ahmad"
-  - family-names: "Wara"
-    given-names: "Kahf-ul"
-  - family-names: "Abid"
-    given-names: "Hureeza"
 version: "1.0.0"
 date-released: "2026-07-07"
 license: MIT
